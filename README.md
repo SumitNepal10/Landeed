@@ -1,16 +1,17 @@
-# landeed
+# Real Estate App Design
 
-A new Flutter project.
 
-## Getting Started
+- [Youtube](https://www.youtube.com/channel/UCv54fMK_UR7SJX70W02usaA)
+- [LinkedIn](https://www.linkedin.com/in/jsdevrazu)
 
-This project is a starting point for a Flutter application.
+![food panda thumnail](https://i.postimg.cc/wTHv4J3S/Cover.png)
 
-A few resources to get you started if this is your first Flutter project:
+## Installation
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+After clone repo you can add dependencies by using this command
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter pub get
+```
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jsdevrazu)
