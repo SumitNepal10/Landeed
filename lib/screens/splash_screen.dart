@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:partice_project/services/auth_service.dart';
+import 'package:partice_project/constant/colors.dart';
+import 'package:partice_project/utils/helper.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,30 +10,59 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  Helper helper = Helper();
+
   @override
   void initState() {
     super.initState();
-    _checkAuthStatus();
-  }
-
-  Future<void> _checkAuthStatus() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    await authService.checkAuthStatus();
-    
-    if (mounted) {
-      if (authService.isAuthenticated) {
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        Navigator.pushReplacementNamed(context, '/started');
-      }
-    }
+    helper.isOnBoarding(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+            gradient: RadialGradient(
+          center: Alignment(10, 10),
+          // near the top right
+          colors: <Color>[
+            Color(0xff21628A),
+            Color(0xff234F68),
+          ], // Gradient from https://learnui.design/tools/gradient-generator.html
+          tileMode: TileMode.clamp,
+        )),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Center(
+                  child: Image(
+                    fit: BoxFit.contain,
+                    image: AssetImage("lib/assets/logo.png"),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Rise",
+                  style: Theme.of(context).textTheme.displayLarge!.copyWith(
+                    color: AppColors.whiteColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "Real Estate",
+                  style: Theme.of(context).textTheme.displayLarge!.copyWith(
+                    color: AppColors.whiteColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

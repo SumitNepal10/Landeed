@@ -5,8 +5,7 @@ import 'package:partice_project/components/login_footer.dart';
 import 'package:partice_project/components/login_option.dart';
 import 'package:partice_project/constant/colors.dart';
 import 'package:partice_project/services/api_service.dart';
-import 'package:provider/provider.dart';
-import 'package:partice_project/services/auth_service.dart';
+import 'package:partice_project/utils/route_name.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,14 +33,16 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.login(
-        _emailController.text.trim(),
-        _passwordController.text,
+      final response = await ApiService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
 
+      // Store token and user data
+      // TODO: Implement secure storage for token and user data
+
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushReplacementNamed(context, RoutesName.homeScreen);
       }
     } catch (e) {
       if (mounted) {
@@ -167,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          Navigator.pushNamed(context, '/signup');
+                          Navigator.pushNamed(context, RoutesName.signupScreen);
                         },
                         child: Text(
                           "Sign Up",

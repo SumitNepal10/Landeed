@@ -4,6 +4,7 @@ import 'package:partice_project/components/gap.dart';
 import 'package:partice_project/components/login_footer.dart';
 import 'package:partice_project/components/login_option.dart';
 import 'package:partice_project/constant/colors.dart';
+import 'package:partice_project/utils/route_name.dart';
 import 'package:flutter/foundation.dart';
 
 class StartedScreen extends StatefulWidget {
@@ -58,7 +59,7 @@ class _StartedScreenState extends State<StartedScreen> {
                 Gap(isWidth: false, isHeight: true, height: height * 0.035),
                 AppButton(
                   onPress: () {
-                    Navigator.pushNamed(context, '/login');
+                    Navigator.pushNamed(context, RoutesName.loginScreen);
                   },
                   title: "Continue with Email",
                   textColor: AppColors.whiteColor,
