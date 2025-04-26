@@ -5,6 +5,8 @@ import 'package:partice_project/components/login_footer.dart';
 import 'package:partice_project/constant/colors.dart';
 import 'package:partice_project/services/api_service.dart';
 import 'package:partice_project/utils/route_name.dart';
+import 'package:provider/provider.dart';
+import 'package:partice_project/services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -36,15 +38,13 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await ApiService.signup(
+      final authService = Provider.of<AuthService>(context, listen: false);
+      await authService.signup(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         phoneNumber: _phoneController.text.trim(),
         fullName: _fullNameController.text.trim(),
       );
-
-      // Store token and user data
-      // TODO: Implement secure storage for token and user data
 
       if (mounted) {
         Navigator.pushReplacementNamed(context, RoutesName.homeScreen);
