@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:partice_project/services/auth_service.dart';
+import 'package:partice_project/utils/route_name.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,9 +23,9 @@ class _SplashScreenState extends State<SplashScreen> {
     
     if (mounted) {
       if (authService.isAuthenticated) {
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushReplacementNamed(context, RoutesName.homeScreen);
       } else {
-        Navigator.pushReplacementNamed(context, '/started');
+        Navigator.pushReplacementNamed(context, RoutesName.startedScreen);
       }
     }
   }

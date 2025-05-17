@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:partice_project/services/auth_service.dart';
 import 'package:partice_project/constant/colors.dart';
+import 'package:partice_project/screens/post_property_screen.dart';
+import 'package:partice_project/screens/main_layout.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -62,7 +64,12 @@ class MenuScreen extends StatelessWidget {
               icon: Icons.post_add,
               title: 'Post Property',
               onTap: () {
-                // TODO: Navigate to post property screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PostPropertyScreen(),
+                  ),
+                );
               },
             ),
             _buildMenuItem(
@@ -70,7 +77,7 @@ class MenuScreen extends StatelessWidget {
               icon: Icons.favorite_border,
               title: 'Favorites',
               onTap: () {
-                // TODO: Navigate to favorites screen
+                MainLayout.navigateToTab(context, 3);
               },
             ),
             _buildMenuItem(

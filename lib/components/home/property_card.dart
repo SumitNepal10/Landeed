@@ -1,87 +1,101 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/gap.dart';
-import 'package:partice_project/constant/colors.dart';
+import 'package:provider/provider.dart';
+import '../../services/favorites_service.dart';
+import '../../models/property.dart';
 
 class PropertyCard extends StatelessWidget {
-  final String title, subtitle, path;
-  final bool isBig;
-  const PropertyCard(
-      {Key? key,
-      required this.title,
-      required this.subtitle,
-      required this.path,
-      this.isBig = false})
-      : super(key: key);
+  final Property property;
+
+  const PropertyCard({
+    Key? key,
+    required this.property,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width * 1;
-    return Container(
-      width: isBig ? width / 1 : width / 1.35,
-      decoration: BoxDecoration(
-          borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-              bottomRight: Radius.circular(20)),
-          image: DecorationImage(
-              image: AssetImage(path),
-              fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.2), BlendMode.darken))),
-      child: Padding(
-        padding: const EdgeInsets.only(left: 22, right: 22, bottom: 22),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Flexible(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                    color: AppColors.whiteColor,
-                    fontWeight: FontWeight.bold,
-                    height: 1.2),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+    final favoritesService = Provider.of<FavoritesService>(context);
+    final isFavorite = favoritesService.isFavorite(property.id);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              Image.network(
+                property.imageUrl,
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
               ),
-            ),
-            const Gap(isWidth: false, isHeight: true, height: 4),
-            Flexible(
-              child: Text(
-                subtitle,
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall!
-                    .copyWith(color: AppColors.whiteColor, fontSize: 12),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const Gap(isWidth: false, isHeight: true, height: 12),
-            InkWell(
-              onTap: () {
-                print("cool");
-              },
-              child: Container(
-                width: 100,
-                height: 36,
-                decoration: BoxDecoration(
-                    color: AppColors.textPrimary,
-                    borderRadius: BorderRadius.circular(10)),
-                child: Center(
-                  child: Text(
-                    "View",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyLarge!
-                        .copyWith(color: AppColors.whiteColor),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : Colors.white,
                   ),
+                  onPressed: () => favoritesService.toggleFavorite(property),
                 ),
               ),
-            )
-          ],
-        ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  property.type,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  property.location,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 8),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          flex: 3,
+                          child: Text(
+                            '\$${property.price.toStringAsFixed(2)}',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          flex: 2,
+                          child: Text(
+                            property.isSale ? 'For Sale' : 'For Rent',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.secondary,
+                                ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

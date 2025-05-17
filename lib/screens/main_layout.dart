@@ -2,22 +2,41 @@ import 'package:flutter/material.dart';
 import 'package:partice_project/components/custom_bottom_nav.dart';
 import 'package:partice_project/screens/home_screen.dart';
 import 'package:partice_project/screens/menu_screen.dart';
+import 'package:partice_project/screens/post_property_screen.dart';
+import 'package:partice_project/screens/favorites_screen.dart';
 
 class MainLayout extends StatefulWidget {
-  const MainLayout({super.key});
+  final int initialIndex;
+
+  const MainLayout({super.key, this.initialIndex = 0});
+
+  static void navigateToTab(BuildContext context, int tabIndex) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MainLayout(initialIndex: tabIndex),
+      ),
+    );
+  }
 
   @override
   State<MainLayout> createState() => _MainLayoutState();
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   final List<Widget> _screens = [
     const HomeScreen(),
     const Center(child: Text('News')),  // Placeholder
-    const Center(child: Text('Add')),   // Placeholder
-    const Center(child: Text('Favorites')), // Placeholder
+    const PostPropertyScreen(),
+    const FavoritesScreen(),
     const MenuScreen(),
   ];
 

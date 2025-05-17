@@ -7,6 +7,7 @@ import 'package:partice_project/constant/colors.dart';
 import 'package:partice_project/services/api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:partice_project/services/auth_service.dart';
+import 'package:partice_project/utils/route_name.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/main');
+        Navigator.pushReplacementNamed(context, RoutesName.homeScreen);
       }
     } catch (e) {
       if (mounted) {
@@ -167,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          Navigator.pushNamed(context, '/signup');
+                          Navigator.pushNamed(context, RoutesName.signupScreen);
                         },
                         child: Text(
                           "Sign Up",

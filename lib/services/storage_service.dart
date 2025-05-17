@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
 
 class StorageService {
   static const _storage = FlutterSecureStorage();
@@ -12,13 +13,18 @@ class StorageService {
   }
 
   static Future<void> saveUserData(Map<String, dynamic> userData) async {
-    await _storage.write(key: 'userData', value: userData.toString());
+    await _storage.write(key: 'userData', value: jsonEncode(userData));
   }
 
   static Future<Map<String, dynamic>?> getUserData() async {
     final userDataString = await _storage.read(key: 'userData');
     if (userDataString == null) return null;
-    return Map<String, dynamic>.from(userDataString as Map);
+    try {
+      return jsonDecode(userDataString) as Map<String, dynamic>;
+    } catch (e) {
+      print('Error decoding user data: $e');
+      return null;
+    }
   }
 
   static Future<void> clearStorage() async {
