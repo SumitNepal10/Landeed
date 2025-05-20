@@ -28,20 +28,15 @@ class PropertyService {
     required String facingDirection,
   }) async {
     try {
-      // Get current user's token
       final token = await _authService.getToken();
       if (token == null) {
         throw Exception('User not authenticated');
       }
 
-      // Convert and compress images to base64
       List<String> base64Images = [];
       for (var image in images) {
         try {
-          // Compress the image
           final compressedImage = await _compressImage(image);
-          
-          // Convert to base64
           final bytes = await compressedImage.readAsBytes();
           String base64Image = base64Encode(bytes);
           String extension = image.path.split('.').last.toLowerCase();
@@ -53,10 +48,8 @@ class PropertyService {
         }
       }
 
-      // Map purpose to backend enum values
       String mappedPurpose = purpose == 'For Sale' ? 'Sale' : 'Rent';
 
-      // Prepare property data
       final propertyData = {
         'title': title,
         'type': type,
@@ -75,7 +68,6 @@ class PropertyService {
         'facingDirection': facingDirection,
       };
 
-      // Make API request to upload property
       final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}/properties'),
         headers: {
@@ -134,6 +126,84 @@ class PropertyService {
         return 'image/webp';
       default:
         return 'image/jpeg'; // Default to JPEG if unknown
+    }
+  }
+
+  Future<List<Property>> getUserProperties(String userId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/api/properties/user/$userId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) {
+          return Property(
+            id: json['_id'] ?? '',
+            imageUrl: json['images'] != null && json['images'].isNotEmpty 
+                ? json['images'][0] 
+                : '',
+            type: json['type'] ?? '',
+            isSale: json['purpose'] == 'Sale',
+            price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
+            location: json['location'] ?? '',
+          );
+        }).toList();
+      } else {
+        throw Exception('Failed to load user properties');
+      }
+    } catch (e) {
+      throw Exception('Error fetching user properties: $e');
+    }
+  }
+
+  Future<List<Property>> getAllProperties() async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/properties/all'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('API Response Status: ${response.statusCode}');
+      print('API Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) {
+          return Property(
+            id: json['_id'] ?? '',
+            imageUrl: json['images'] != null && json['images'].isNotEmpty 
+                ? json['images'][0] 
+                : '',
+            type: json['type'] ?? '',
+            isSale: json['purpose'] == 'Sale',
+            price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
+            location: json['location'] ?? '',
+          );
+        }).toList();
+      } else {
+        throw Exception('Failed to load properties: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching properties: $e');
+      throw Exception('Error fetching properties: $e');
     }
   }
 } 

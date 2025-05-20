@@ -124,4 +124,9 @@ class AuthService extends ChangeNotifier {
     }
     return null;
   }
+
+  Future<String?> getUserId() async {
+    final user = await getUser();
+    return user?['_id'];
+  }
 } 

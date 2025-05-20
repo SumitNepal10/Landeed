@@ -1,13 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:partice_project/constant/colors.dart';
+import 'package:partice_project/components/custom_bottom_nav.dart';
 import 'package:partice_project/screens/account_profile_screen.dart';
 import 'package:partice_project/screens/favourite_screen.dart';
 import 'package:partice_project/screens/home_screen.dart';
-import 'package:partice_project/screens/search_screen.dart';
 import 'package:partice_project/screens/post_property_screen.dart';
 import 'package:partice_project/screens/profile_screen.dart';
 import 'package:partice_project/screens/login_screen.dart';
+import 'package:partice_project/screens/properties_screen.dart';
 import 'package:partice_project/services/auth_service.dart';
 import 'package:partice_project/utils/route_name.dart';
 
@@ -25,7 +26,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
+    const PropertiesScreen(),
     const PostPropertyScreen(),
+    const FavouriteScreen(),
     const ProfileScreen(),
   ];
 
@@ -144,23 +147,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            label: 'Post Property',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+      bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
         onTap: _onItemTapped,
       ),
     );
