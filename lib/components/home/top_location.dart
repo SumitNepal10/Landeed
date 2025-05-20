@@ -4,8 +4,7 @@ import 'package:partice_project/constant/colors.dart';
 
 class TopLocation extends StatelessWidget {
   final String location, path;
-  const TopLocation({Key? key, required this.location, required this.path})
-      : super(key: key);
+  const TopLocation({super.key, required this.location, required this.path});
 
   @override
   Widget build(BuildContext context) {

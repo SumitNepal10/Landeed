@@ -6,11 +6,10 @@ class RowTitleHome extends StatelessWidget {
   final String title, subtitle;
 
   const RowTitleHome(
-      {Key? key,
+      {super.key,
       required this.title,
       required this.subtitle,
-      required this.onPress})
-      : super(key: key);
+      required this.onPress});
 
   @override
   Widget build(BuildContext context) {

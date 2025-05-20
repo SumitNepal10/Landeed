@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/app_button.dart';
-import 'package:partice_project/components/gap.dart';
-import 'package:partice_project/components/or_divider.dart';
-import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/utils/route_name.dart';
+import 'package:landeed/components/app_button.dart';
+import 'package:landeed/components/gap.dart';
+import 'package:landeed/components/or_divider.dart';
+import 'package:landeed/constant/colors.dart';
+import 'package:landeed/utils/route_name.dart';
 
 class LoginFooter extends StatelessWidget {
   const LoginFooter({super.key});

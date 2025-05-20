@@ -7,9 +7,9 @@ class PropertyCard extends StatelessWidget {
   final Property property;
 
   const PropertyCard({
-    Key? key,
+    super.key,
     required this.property,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

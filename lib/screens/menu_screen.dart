@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:partice_project/services/auth_service.dart';
-import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/screens/post_property_screen.dart';
-import 'package:partice_project/screens/main_layout.dart';
+import 'package:landeed/services/auth_service.dart';
+import 'package:landeed/screens/post_property_screen.dart';
+import 'package:landeed/screens/main_layout.dart';
+import 'package:landeed/utils/route_name.dart';
+import 'package:landeed/screens/my_properties_screen.dart';
+import 'package:landeed/screens/favorite_properties_screen.dart';
+import 'package:landeed/screens/about_us_screen.dart';
+import 'package:landeed/screens/terms_conditions_screen.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -74,14 +78,6 @@ class MenuScreen extends StatelessWidget {
             ),
             _buildMenuItem(
               context,
-              icon: Icons.favorite_border,
-              title: 'Favorites',
-              onTap: () {
-                MainLayout.navigateToTab(context, 3);
-              },
-            ),
-            _buildMenuItem(
-              context,
               icon: Icons.remove_red_eye_outlined,
               title: 'Recently Viewed',
               onTap: () {
@@ -93,7 +89,25 @@ class MenuScreen extends StatelessWidget {
               icon: Icons.home_work_outlined,
               title: 'My Properties',
               onTap: () {
-                // TODO: Navigate to my properties screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MyPropertiesScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildMenuItem(
+              context,
+              icon: Icons.favorite,
+              title: 'Favorite Properties',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FavoritePropertiesScreen(),
+                  ),
+                );
               },
             ),
             _buildMenuItem(
@@ -103,11 +117,7 @@ class MenuScreen extends StatelessWidget {
               onTap: () async {
                 await authService.logout();
                 if (context.mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  );
+                  Navigator.pushReplacementNamed(context, RoutesName.loginScreen);
                 }
               },
             ),
@@ -126,7 +136,65 @@ class MenuScreen extends StatelessWidget {
               icon: Icons.info_outline,
               title: 'About Landeed',
               onTap: () {
-                // TODO: Navigate to about screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AboutUsScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildMenuItem(
+              context,
+              icon: Icons.contact_mail,
+              title: 'Contact Us',
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Contact Us'),
+                    content: const Text('Email: support@landeed.com\nPhone: +1-234-567-8901'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            _buildMenuItem(
+              context,
+              icon: Icons.privacy_tip,
+              title: 'Privacy Policy',
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Privacy Policy'),
+                    content: const Text('Read our privacy policy at https://landeed.com/privacy'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            _buildMenuItem(
+              context,
+              icon: Icons.article,
+              title: 'Terms & Conditions',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TermsConditionsScreen(),
+                  ),
+                );
               },
             ),
           ],

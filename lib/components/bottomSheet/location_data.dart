@@ -5,8 +5,7 @@ import 'package:partice_project/constant/colors.dart';
 class LocationData extends StatelessWidget {
   final bool isActive;
   final String location;
-  const LocationData({Key? key, required this.isActive, required this.location})
-      : super(key: key);
+  const LocationData({super.key, required this.isActive, required this.location});
 
   @override
   Widget build(BuildContext context) {

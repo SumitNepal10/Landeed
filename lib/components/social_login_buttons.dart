@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/app_button.dart';
-import 'package:partice_project/components/gap.dart';
-import 'package:partice_project/components/or_divider.dart';
+import 'package:landeed/components/app_button.dart';
+import 'package:landeed/components/gap.dart';
+import 'package:landeed/components/or_divider.dart';
 
 class SocialLoginButtons extends StatelessWidget {
   const SocialLoginButtons({super.key});

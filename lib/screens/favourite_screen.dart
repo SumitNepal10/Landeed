@@ -1,20 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/shared/screen.dart';
+import 'package:provider/provider.dart';
+import '../services/favorites_service.dart';
+import '../components/property_card.dart';
 
-class FavouriteScreen extends StatefulWidget {
+class FavouriteScreen extends StatelessWidget {
   const FavouriteScreen({super.key});
 
   @override
-  State<FavouriteScreen> createState() => _FavouriteScreenState();
-}
-
-class _FavouriteScreenState extends State<FavouriteScreen> {
-  @override
   Widget build(BuildContext context) {
-    return Screen(
-      isBackButton: false,
-      isBottomTab: true,
-      child: Text("cool"),
+    final favoritesService = Provider.of<FavoritesService>(context);
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Favorites'),
+      ),
+      body: favoritesService.favoriteProperties.isEmpty
+          ? const Center(
+              child: Text('No favorite properties yet'),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: favoritesService.favoriteProperties.length,
+              itemBuilder: (context, index) {
+                final property = favoritesService.favoriteProperties[index];
+                return PropertyCard(property: property);
+              },
+            ),
     );
   }
-}
+} 

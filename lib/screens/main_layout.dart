@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/custom_bottom_nav.dart';
-import 'package:partice_project/screens/home_screen.dart';
-import 'package:partice_project/screens/menu_screen.dart';
-import 'package:partice_project/screens/post_property_screen.dart';
-import 'package:partice_project/screens/favorites_screen.dart';
+import 'package:landeed/components/custom_bottom_nav.dart';
+import 'package:landeed/screens/home_screen.dart';
+import 'package:landeed/screens/menu_screen.dart';
+import 'package:landeed/screens/post_property_screen.dart';
+import 'package:landeed/screens/favorite_properties_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:landeed/providers/notification_provider.dart';
+import 'package:landeed/utils/route_name.dart';
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
@@ -36,7 +39,7 @@ class _MainLayoutState extends State<MainLayout> {
     const HomeScreen(),
     const Center(child: Text('News')),  // Placeholder
     const PostPropertyScreen(),
-    const FavoritesScreen(),
+    const FavoritePropertiesScreen(),
     const MenuScreen(),
   ];
 

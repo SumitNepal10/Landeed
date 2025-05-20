@@ -9,12 +9,17 @@ const propertySchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['Apartment', 'House', 'Villa', 'Land', 'Commercial']
+    enum: ['House', 'Apartment', 'Land', 'Commercial Space', 'Flat']
   },
   purpose: {
     type: String,
     required: true,
     enum: ['Sale', 'Rent']
+  },
+  propertyClass: {
+    type: String,
+    enum: ['Regular', 'Premium', 'Top'],
+    default: 'Regular'
   },
   location: {
     type: String,
@@ -36,47 +41,64 @@ const propertySchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  availabilityDate: {
+  images: [{
     type: String,
     required: true
-  },
+  }],
   contactInfo: {
     type: String,
     required: true
   },
-  images: [{
-    type: String
-  }],
   roomDetails: {
-    bedrooms: { type: Number },
-    bathrooms: { type: Number },
-    kitchens: { type: Number },
-    livingRooms: { type: Number }
+    bedrooms: String,
+    bathrooms: String,
+    kitchen: String,
+    livingRooms: String
   },
   features: {
-    parking: { type: Boolean, default: false },
-    garden: { type: Boolean, default: false },
-    security: { type: Boolean, default: false },
-    swimmingPool: { type: Boolean, default: false },
-    airConditioning: { type: Boolean, default: false },
-    furnished: { type: Boolean, default: false }
+    furnished: Boolean,
+    parking: Boolean,
+    garden: Boolean,
+    swimmingPool: Boolean
   },
   floorLevel: {
-    type: String
+    type: String,
+    enum: ['Ground Floor', 'First Floor', 'Second Floor', 'Third Floor', 'Fourth Floor', 'Fifth Floor']
   },
   facingDirection: {
     type: String,
-    enum: ['North', 'South', 'East', 'West', 'North-East', 'North-West', 'South-East', 'South-West']
+    enum: ['East', 'West', 'North', 'South', 'North-East', 'North-West', 'South-East', 'South-West']
+  },
+  status: {
+    type: String,
+    required: true,
+    enum: ['pending', 'verified', 'rejected'],
+    default: 'pending'
+  },
+  rejectionReason: {
+    type: String,
+    default: null
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'User'
+    ref: 'User',
+    required: false
+  },
+  userEmail: {
+    type: String,
+    required: false
+  },
+  verifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
+    default: null
+  },
+  verificationDate: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
 });
 
-const Property = mongoose.model('Property', propertySchema);
-
-module.exports = Property; 
+module.exports = mongoose.model('Property', propertySchema); 

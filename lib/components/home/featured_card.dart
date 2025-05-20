@@ -6,7 +6,7 @@ import 'package:partice_project/constant/colors.dart';
 class FeaturedCard extends StatelessWidget {
   final String path, category, title, rating, location, payment;
   const FeaturedCard(
-      {Key? key,
+      {super.key, Key? key,
       required this.path,
       required this.category,
       required this.title,

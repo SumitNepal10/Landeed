@@ -6,14 +6,24 @@ const adminSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    trim: true,
+    lowercase: true,
+    validate: {
+      validator: function(v) {
+        return v.endsWith('@landeed.com');
+      },
+      message: 'Admin email must end with @landeed.com'
+    }
   },
   password: {
     type: String,
     required: true,
+    minlength: 6
   },
   fullName: {
     type: String,
     required: true,
+    trim: true
   },
   role: {
     type: String,
@@ -26,7 +36,7 @@ const adminSchema = new mongoose.Schema({
   },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
   lastLogin: {
     type: Date,
@@ -51,21 +61,16 @@ adminSchema.methods.comparePassword = async function(candidatePassword) {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
-    throw new Error('Error comparing passwords');
+    throw error;
   }
 };
-
-// Add email validation
-adminSchema.path('email').validate(function(email) {
-  return email.endsWith('@landeed.com');
-}, 'Email must end with @landeed.com');
 
 // Static method to create default admin
 adminSchema.statics.createDefaultAdmin = async function() {
   try {
     const defaultAdmin = {
       email: 'admin@landeed.com',
-      password: 'admin123', // This will be hashed by the pre-save hook
+      password: 'admin123',
       fullName: 'Default Admin',
       role: 'super_admin',
       isActive: true
@@ -74,10 +79,9 @@ adminSchema.statics.createDefaultAdmin = async function() {
     const existingAdmin = await this.findOne({ email: defaultAdmin.email });
     if (!existingAdmin) {
       await this.create(defaultAdmin);
-      console.log('Default admin created successfully');
     }
   } catch (error) {
-    console.error('Error creating default admin:', error);
+    throw error;
   }
 };
 

@@ -1,17 +1,130 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/models/property.dart';
-import 'package:partice_project/constant/colors.dart';
+import 'package:landeed/models/property.dart';
+import 'package:landeed/constant/colors.dart';
+import 'package:landeed/services/property_service.dart';
+import 'package:landeed/services/auth_service.dart';
+import 'package:provider/provider.dart';
 
-class PropertyDescriptionScreen extends StatelessWidget {
-  final Property property;
+class PropertyDescriptionScreen extends StatefulWidget {
+  final Property? property;
+  final String? propertyId;
 
   const PropertyDescriptionScreen({
-    Key? key,
-    required this.property,
-  }) : super(key: key);
+    super.key,
+    this.property,
+    this.propertyId,
+  });
+
+  @override
+  State<PropertyDescriptionScreen> createState() => _PropertyDescriptionScreenState();
+}
+
+class _PropertyDescriptionScreenState extends State<PropertyDescriptionScreen> {
+  Property? _property;
+  bool _isLoading = true;
+  String? _error;
+  bool _isFavorite = false;
+  String? _userEmail;
+
+  @override
+  void initState() {
+    super.initState();
+    final authService = Provider.of<AuthService>(context, listen: false);
+    _userEmail = authService.userData?['email'];
+    if (widget.property != null) {
+      _property = widget.property;
+      _isFavorite = widget.property!.isFavorite;
+      _isLoading = false;
+      _fetchFavoriteStatus();
+    } else if (widget.propertyId != null) {
+      _fetchProperty(widget.propertyId!);
+    } else {
+      _error = 'No property data provided.';
+      _isLoading = false;
+    }
+  }
+
+  Future<void> _fetchFavoriteStatus() async {
+    if (_property == null || _userEmail == null) return;
+    try {
+      final propertyService = PropertyService(Provider.of<AuthService>(context, listen: false));
+      final favorites = await propertyService.getFavoriteProperties(_userEmail!);
+      setState(() {
+        _isFavorite = favorites.any((p) => p.id == _property!.id);
+      });
+    } catch (e) {
+      // Optionally handle error
+    }
+  }
+
+  Future<void> _fetchProperty(String id) async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final propertyService = PropertyService(Provider.of<AuthService>(context, listen: false));
+      final property = await propertyService.getPropertyById(id);
+      setState(() {
+        _property = property;
+        _isFavorite = false;
+        _isLoading = false;
+      });
+      await _fetchFavoriteStatus();
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_property == null) return;
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final userEmail = authService.userData?['email'];
+    if (userEmail == null) return;
+    setState(() {
+      _isFavorite = !_isFavorite;
+    });
+
+    try {
+      final propertyService = PropertyService(Provider.of<AuthService>(context, listen: false));
+      await propertyService.toggleFavorite(_property!.id, userEmail);
+      // Update the property's favorite status
+      setState(() {
+        _property = _property!.copyWith(isFavorite: _isFavorite);
+      });
+    } catch (e) {
+      // Revert the UI state if the API call fails
+      setState(() {
+        _isFavorite = !_isFavorite;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update favorite: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(child: Text(_error!)),
+      );
+    }
+    final property = _property!;
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -46,10 +159,11 @@ class PropertyDescriptionScreen extends StatelessWidget {
                         CircleAvatar(
                           backgroundColor: Colors.white,
                           child: IconButton(
-                            icon: const Icon(Icons.favorite_border, color: Colors.black),
-                            onPressed: () {
-                              // TODO: Implement favorite functionality
-                            },
+                            icon: Icon(
+                              _isFavorite ? Icons.favorite : Icons.favorite_border,
+                              color: _isFavorite ? Colors.red : Colors.black,
+                            ),
+                            onPressed: _toggleFavorite,
                           ),
                         ),
                       ],
@@ -64,46 +178,32 @@ class PropertyDescriptionScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Verification Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.green[100],
-                      borderRadius: BorderRadius.circular(20),
+                  if (property.status == 'verified')
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.green[100],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Verified by landeed',
+                            style: TextStyle(color: Colors.green[900], fontSize: 12),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Verified by landeed',
-                          style: TextStyle(color: Colors.green[900], fontSize: 12),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '4584',
-                          style: TextStyle(color: Colors.green[900], fontSize: 12),
-                        ),
-                        Icon(Icons.remove_red_eye, color: Colors.green[900], size: 16),
-                        const SizedBox(width: 4),
-                        Icon(Icons.videocam, color: Colors.green[900], size: 16),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 16),
                   // Price and Type
                   Text(
-                    'RS. ${property.price.toStringAsFixed(0)} (Negotiable)',
+                    'RS. ${property.price.toStringAsFixed(0)}${property.status == 'pending' ? '' : ' (Negotiable)'}',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Text(
-                    '(Three Crore only)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -116,39 +216,36 @@ class PropertyDescriptionScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   // Owner Contact
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Row(
-                          children: [
-                            Text(
-                              'Owner\n9823048221',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
+                  if (property.userEmail != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Owner\n${property.userEmail}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
-                          ],
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            // TODO: Implement map view
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green[900],
-                            foregroundColor: Colors.white,
                           ),
-                          child: const Text('Map View'),
-                        ),
-                      ],
+                          ElevatedButton(
+                            onPressed: () {
+                              // TODO: Implement map view
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[900],
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Map View'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 24),
                   // Property Description
                   const Text(
@@ -159,9 +256,9 @@ class PropertyDescriptionScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, is nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
-                    style: TextStyle(
+                  Text(
+                    property.description,
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
                       height: 1.5,

@@ -1,5 +1,4 @@
-const ToBeVerifiedProperty = require('../models/ToBeVerifiedProperty');
-const VerifiedProperty = require('../models/VerifiedProperty');
+const Property = require('../models/Property');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const Admin = require('../models/Admin');
@@ -8,55 +7,38 @@ const jwt = require('jsonwebtoken');
 // Admin authentication
 const adminLogin = async (req, res) => {
   try {
-    console.log('Admin login attempt:', { email: req.body.email });
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
-
+    // Find admin by email
     const admin = await Admin.findOne({ email });
-    console.log('Admin found:', admin ? 'Yes' : 'No');
-    
     if (!admin) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    if (!admin.isActive) {
-      return res.status(401).json({ message: 'Account is deactivated' });
-    }
-
+    // Check password
     const isMatch = await admin.comparePassword(password);
-    console.log('Password match:', isMatch ? 'Yes' : 'No');
-
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Update last login
-    admin.lastLogin = new Date();
-    await admin.save();
-
+    // Generate token
     const token = jwt.sign(
-      { id: admin._id, role: admin.role },
+      { adminId: admin._id },
       process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '24h' }
     );
-
-    console.log('Admin login successful:', { adminId: admin._id, role: admin.role });
 
     res.json({
       token,
       admin: {
         id: admin._id,
         email: admin.email,
-        fullName: admin.fullName,
-        role: admin.role
+        fullName: admin.fullName
       }
     });
   } catch (error) {
     console.error('Admin login error:', error);
-    res.status(500).json({ message: 'Internal server error during login' });
+    res.status(500).json({ message: 'Error during login' });
   }
 };
 
@@ -115,12 +97,13 @@ const getAdmins = async (req, res) => {
 // Get all properties pending verification
 const getPendingProperties = async (req, res) => {
   try {
-    const properties = await ToBeVerifiedProperty.find({ status: 'pending' })
-      .populate('uploadedBy', 'fullName email phoneNumber')
+    const properties = await Property.find({ status: 'pending' })
+      .populate('user', 'fullName email phoneNumber')
       .sort({ createdAt: -1 });
     
     res.json(properties);
   } catch (error) {
+    console.error('Error fetching properties:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -129,56 +112,49 @@ const getPendingProperties = async (req, res) => {
 const approveProperty = async (req, res) => {
   try {
     const { propertyId } = req.params;
-    const adminId = req.admin._id;
+    const { propertyClass } = req.body;
 
-    const property = await ToBeVerifiedProperty.findById(propertyId);
+    console.log('Verifying property:', propertyId, 'with class:', propertyClass); // Debug log
+
+    const property = await Property.findById(propertyId).populate('user');
     if (!property) {
       return res.status(404).json({ message: 'Property not found' });
     }
 
-    // Map the fields correctly
-    const verifiedProperty = new VerifiedProperty({
-      title: property.title,
-      description: property.description,
-      price: parseFloat(property.price),
-      location: property.location,
-      propertyType: property.type,
-      bedrooms: property.roomDetails?.bedrooms || 0,
-      bathrooms: property.roomDetails?.bathrooms || 0,
-      area: parseFloat(property.size) || 0,
-      images: property.images || [],
-      amenities: Object.entries(property.features || {})
-        .filter(([_, value]) => value === true)
-        .map(([key]) => key),
-      uploadedBy: property.uploadedBy,
-      verifiedBy: adminId,
-      verificationDate: new Date(),
-      status: 'active'
-    });
+    if (!property.user) {
+      return res.status(400).json({ message: 'Property has no associated user' });
+    }
 
-    await verifiedProperty.save();
+    // Update property status and class
+    property.status = 'verified';
+    property.propertyClass = propertyClass;
+    property.verifiedBy = req.admin._id;
+    property.verificationDate = new Date();
+    
+    await property.save();
+
+    console.log('Property updated:', property); // Debug log
 
     // Create notification for the user
     const notification = new Notification({
-      user: property.uploadedBy,
-      title: 'Property Approved',
-      message: `Your property "${property.title}" has been approved and is now live on our platform.`,
-      type: 'property_approved',
-      propertyId: property._id,
-      isRead: false
+      user: property.user._id,
+      title: 'Property Verified',
+      message: `Your property "${property.title}" has been verified as ${property.propertyClass} property.`,
+      type: 'property_verified',
+      propertyId: property._id
     });
     await notification.save();
 
-    // Delete from ToBeVerifiedProperty
-    await ToBeVerifiedProperty.findByIdAndDelete(propertyId);
-
     res.json({ 
-      message: 'Property approved successfully',
-      property: verifiedProperty
+      message: 'Property verified successfully',
+      property: property
     });
   } catch (error) {
-    console.error('Error approving property:', error);
-    res.status(500).json({ message: error.message });
+    console.error('Error verifying property:', error);
+    res.status(500).json({ 
+      message: 'Error verifying property',
+      error: error.message
+    });
   }
 };
 
@@ -186,38 +162,33 @@ const approveProperty = async (req, res) => {
 const rejectProperty = async (req, res) => {
   try {
     const { propertyId } = req.params;
-    const { reason } = req.body;
+    const { rejectionReason } = req.body;
 
-    if (!reason) {
-      return res.status(400).json({ message: 'Rejection reason is required' });
-    }
-
-    const property = await ToBeVerifiedProperty.findById(propertyId);
+    const property = await Property.findById(propertyId);
     if (!property) {
       return res.status(404).json({ message: 'Property not found' });
     }
 
+    property.status = 'rejected';
+    property.rejectionReason = rejectionReason;
+    property.verifiedBy = req.admin._id;
+    property.verificationDate = new Date();
+    await property.save();
+
     // Create notification for the user
     const notification = new Notification({
-      user: property.uploadedBy,
+      user: property.user,
       title: 'Property Rejected',
-      message: `Your property "${property.title}" has been rejected. Reason: ${reason}`,
+      message: `Your property "${property.title}" has been rejected. Reason: ${rejectionReason}`,
       type: 'property_rejected',
-      propertyId: property._id,
-      isRead: false
+      propertyId: property._id
     });
     await notification.save();
 
-    // Delete from ToBeVerifiedProperty
-    await ToBeVerifiedProperty.findByIdAndDelete(propertyId);
-
-    res.json({ 
-      message: 'Property rejected successfully',
-      notification: notification
-    });
+    res.json({ message: 'Property rejected successfully' });
   } catch (error) {
     console.error('Error rejecting property:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Error rejecting property' });
   }
 };
 
@@ -227,14 +198,16 @@ const getDashboardStats = async (req, res) => {
     const [
       pendingPropertiesCount,
       verifiedPropertiesCount,
+      rejectedPropertiesCount,
       totalUsers,
       recentProperties
     ] = await Promise.all([
-      ToBeVerifiedProperty.countDocuments({ status: 'pending' }),
-      VerifiedProperty.countDocuments(),
+      Property.countDocuments({ status: 'pending' }),
+      Property.countDocuments({ status: 'verified' }),
+      Property.countDocuments({ status: 'rejected' }),
       User.countDocuments(),
-      ToBeVerifiedProperty.find({ status: 'pending' })
-        .populate('uploadedBy', 'fullName email')
+      Property.find()
+        .populate('user', 'fullName email')
         .sort({ createdAt: -1 })
         .limit(5)
     ]);
@@ -242,10 +215,12 @@ const getDashboardStats = async (req, res) => {
     res.json({
       pendingPropertiesCount,
       verifiedPropertiesCount,
+      rejectedPropertiesCount,
       totalUsers,
       recentProperties
     });
   } catch (error) {
+    console.error('Error getting dashboard stats:', error);
     res.status(500).json({ message: error.message });
   }
 };

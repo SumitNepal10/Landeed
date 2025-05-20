@@ -9,10 +9,10 @@ class PropertyCard extends StatelessWidget {
   final double? width;
 
   const PropertyCard({
-    Key? key,
+    super.key,
     required this.property,
     this.width,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +62,26 @@ class PropertyCard extends StatelessWidget {
                         },
                       ),
                     ),
+                    if (property.status == 'verified' || property.status == 'rejected')
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: property.status == 'verified' ? Colors.green : Colors.red,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            property.status.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
                     Positioned(
                       top: 8,
                       right: 8,

@@ -7,11 +7,10 @@ class RowTitle extends StatelessWidget {
   final Icon icon;
   final bool isNoneBorder;
   const RowTitle(
-      {Key? key,
+      {super.key,
       required this.title,
       required this.icon,
-      this.isNoneBorder = false})
-      : super(key: key);
+      this.isNoneBorder = false});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +26,7 @@ class RowTitle extends StatelessWidget {
             ))),
       child: Row(
         children: [
-          Container(
+          SizedBox(
             width: 30,
             height: 30,
             child: CircleAvatar(

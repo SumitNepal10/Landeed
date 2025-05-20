@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/app_button.dart';
-import 'package:partice_project/components/app_padding.dart';
-import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/utils/route_name.dart';
+import 'package:landeed/components/app_button.dart';
+import 'package:landeed/components/app_padding.dart';
+import 'package:landeed/constant/colors.dart';
+import 'package:landeed/utils/route_name.dart';
 
 class Screen extends StatelessWidget {
   final Widget child;
   final bool isBackButton, isActions, isBottomTab;
+  final List<Widget>? appBarActions;
   const Screen(
-      {Key? key,
+      {super.key,
       this.isActions = false,
       this.isBottomTab = false,
+      this.appBarActions,
       required this.child,
-      required this.isBackButton})
-      : super(key: key);
+      required this.isBackButton});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +22,7 @@ class Screen extends StatelessWidget {
       appBar: isBackButton
           ? AppBar(
               elevation: 0,
-              actions: isActions
+              actions: appBarActions ?? (isActions
                   ? [
                       AppButton(
                         onPress: () {
@@ -35,7 +36,7 @@ class Screen extends StatelessWidget {
                         textColor: AppColors.whiteColor,
                       )
                     ]
-                  : null,
+                  : null),
             )
           : null,
       body: SafeArea(

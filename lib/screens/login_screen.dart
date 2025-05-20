@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/app_button.dart';
-import 'package:partice_project/components/gap.dart';
-import 'package:partice_project/components/login_footer.dart';
-import 'package:partice_project/components/login_option.dart';
-import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/services/api_service.dart';
+import 'package:landeed/components/app_button.dart';
+import 'package:landeed/components/gap.dart';
+import 'package:landeed/components/login_footer.dart';
+import 'package:landeed/components/login_option.dart';
+import 'package:landeed/constant/colors.dart';
 import 'package:provider/provider.dart';
-import 'package:partice_project/services/auth_service.dart';
-import 'package:partice_project/utils/route_name.dart';
+import 'package:landeed/services/auth_service.dart';
+import 'package:landeed/utils/route_name.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -36,13 +35,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.login(
-        _emailController.text.trim(),
-        _passwordController.text,
+      final isAdmin = _emailController.text.trim().endsWith('@landeed.com');
+      final result = await authService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        isAdmin: isAdmin,
       );
 
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, RoutesName.homeScreen);
+      if (result['success']) {
+        if (isAdmin) {
+          Navigator.pushReplacementNamed(context, RoutesName.adminDashboard);
+        } else {
+          Navigator.pushReplacementNamed(context, RoutesName.homeScreen);
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? 'Login failed')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -116,6 +125,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (!value.contains('@')) {
                         return 'Please enter a valid email';
                       }
+                      // Allow both regular user and admin email domains
+                      if (!value.endsWith('@gmail.com') && !value.endsWith('@landeed.com')) {
+                        return 'Please use valid email';
+                      }
                       return null;
                     },
                   ),
@@ -159,29 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     radius: 15,
                   ),
                   Gap(isWidth: false, isHeight: true, height: height * 0.02),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account? ",
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pushNamed(context, RoutesName.signupScreen);
-                        },
-                        child: Text(
-                          "Sign Up",
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyLarge!
-                              .copyWith(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
+                  
                   const LoginFooter()
                 ],
               ),

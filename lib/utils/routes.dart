@@ -25,6 +25,9 @@ import 'package:partice_project/screens/topLocationScreen/top_location_screen.da
 import 'package:partice_project/screens/user_account_scree.dart';
 import 'package:partice_project/utils/route_name.dart';
 import 'package:partice_project/constant/colors.dart';
+import 'package:partice_project/screens/admin/admin_dashboard_screen.dart';
+import 'package:partice_project/screens/my_properties_screen.dart';
+import 'package:partice_project/screens/notifications_screen.dart';
 
 class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -89,6 +92,12 @@ class Routes {
       case RoutesName.profileScreen:
         return MaterialPageRoute(
             builder: (context) => const AccountProfileScreen());
+      case RoutesName.adminDashboard:
+        return MaterialPageRoute(builder: (_) => const AdminDashboardScreen());
+      case RoutesName.myPropertiesScreen:
+        return MaterialPageRoute(builder: (_) => const MyPropertiesScreen());
+      case RoutesName.notificationsScreen:
+        return MaterialPageRoute(builder: (_) => const NotificationsScreen());
       default:
         return MaterialPageRoute(builder: (context) {
           return const Scaffold(

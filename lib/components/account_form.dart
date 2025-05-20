@@ -112,10 +112,11 @@ class _AccountFormState extends State<AccountForm> {
                   leftIcon: true,
                   icon: const Icon(Icons.man),
                   onValidator: (value) {
-                    if (value.isEmpty)
+                    if (value.isEmpty) {
                       return 'Enter fullname';
-                    else if (value.length < 3)
+                    } else if (value.length < 3)
                       return "Full name at least 3 characters";
+                    return null;
                   }),
               Gap(isWidth: false, isHeight: true, height: height * 0.019),
               AppInput(
@@ -131,10 +132,11 @@ class _AccountFormState extends State<AccountForm> {
                   leftIcon: true,
                   icon: const Icon(Icons.email),
                   onValidator: (value) {
-                    if (value.isEmpty)
+                    if (value.isEmpty) {
                       return 'Enter email';
-                    else if (!helper.emailValid(value))
+                    } else if (!helper.emailValid(value))
                       return "Enter invalid email";
+                    return null;
                   }),
               Gap(isWidth: false, isHeight: true, height: height * 0.019),
               AppInput(
@@ -151,6 +153,7 @@ class _AccountFormState extends State<AccountForm> {
                   isFilled: true,
                   onValidator: (value) {
                     if (value.isEmpty) return 'Enter Phonenumber';
+                    return null;
                   }),
             ],
           ),

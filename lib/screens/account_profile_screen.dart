@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/shared/screen.dart';
+import 'package:landeed/components/shared/screen.dart';
 
 class AccountProfileScreen extends StatefulWidget {
   const AccountProfileScreen({super.key});

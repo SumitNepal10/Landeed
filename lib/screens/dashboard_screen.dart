@@ -1,16 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/components/custom_bottom_nav.dart';
-import 'package:partice_project/screens/account_profile_screen.dart';
-import 'package:partice_project/screens/favourite_screen.dart';
-import 'package:partice_project/screens/home_screen.dart';
-import 'package:partice_project/screens/post_property_screen.dart';
-import 'package:partice_project/screens/profile_screen.dart';
-import 'package:partice_project/screens/login_screen.dart';
-import 'package:partice_project/screens/properties_screen.dart';
-import 'package:partice_project/services/auth_service.dart';
-import 'package:partice_project/utils/route_name.dart';
+import 'package:landeed/constant/colors.dart';
+import 'package:landeed/components/custom_bottom_nav.dart';
+import 'package:landeed/screens/account_profile_screen.dart';
+import 'package:landeed/screens/favourite_screen.dart';
+import 'package:landeed/screens/home_screen.dart';
+import 'package:landeed/screens/post_property_screen.dart';
+import 'package:landeed/screens/login_screen.dart';
+import 'package:landeed/screens/properties_screen.dart';
+import 'package:landeed/services/auth_service.dart';
+import 'package:landeed/utils/route_name.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -29,7 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const PropertiesScreen(),
     const PostPropertyScreen(),
     const FavouriteScreen(),
-    const ProfileScreen(),
+    const AccountProfileScreen(),
   ];
 
   void _onItemTapped(int index) {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class LoginOption extends StatelessWidget {
   final String path;
-  const LoginOption({Key? key, required this.path}) : super(key: key);
+  const LoginOption({super.key, required this.path});
 
   @override
   Widget build(BuildContext context) {

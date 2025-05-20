@@ -96,6 +96,7 @@ class _FeaturedScreenState extends State<FeaturedScreen> {
               hinit: "Find location...",
               onValidator: (value) {
                 if (value.isEmpty) return;
+                return null;
               }),
           Gap(
             isWidth: false,

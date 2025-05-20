@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/app_button.dart';
-import 'package:partice_project/components/gap.dart';
-import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/utils/route_name.dart';
+import 'package:landeed/components/app_button.dart';
+import 'package:landeed/components/gap.dart';
+import 'package:landeed/constant/colors.dart';
+import 'package:landeed/utils/route_name.dart';
 import 'package:pinput/pinput.dart';
 
 class OtpCard extends StatefulWidget {
-  const OtpCard({super.key});
+  final Function(String) onCompleted;
+  final bool isLoading;
+  final VoidCallback? onResend;
+
+  const OtpCard({
+    super.key,
+    required this.onCompleted,
+    this.isLoading = false,
+    this.onResend,
+  });
 
   @override
   State<OtpCard> createState() => _OtpCardState();
@@ -60,63 +69,63 @@ class _OtpCardState extends State<OtpCard> {
       ),
     );
 
-    /// Optionally you can use form to validate the Pinput
-    return Column(
-      children: [
-        Form(
-          key: formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Directionality(
-                // Specify direction if desired
-                textDirection: TextDirection.ltr,
-                child: Pinput(
-                  length: 6,
-                  defaultPinTheme: defaultPinTheme,
-                  focusedPinTheme: focusedPinTheme,
-                  submittedPinTheme: submittedPinTheme,
-                  validator: (s) {
-                    return s == '222222' ? null : 'Pin is incorrect';
+    return Form(
+      key: formKey,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Pinput(
+              length: 6,
+              controller: pinController,
+              focusNode: focusNode,
+              defaultPinTheme: defaultPinTheme,
+              focusedPinTheme: focusedPinTheme,
+              submittedPinTheme: submittedPinTheme,
+              enabled: !widget.isLoading,
+              validator: (s) {
+                return s?.length == 6 ? null : 'Please enter 6 digits';
+              },
+              pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
+              showCursor: true,
+              onCompleted: widget.onCompleted,
+            ),
+          ),
+          Gap(isWidth: false, isHeight: true, height: height * 0.04),
+          AppButton(
+            onPress: widget.isLoading
+                ? () {}
+                : () {
+                    if (pinController.text.length == 6) {
+                      widget.onCompleted(pinController.text);
+                    }
                   },
-                  pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
-                  showCursor: true,
-                  onCompleted: (pin) => print(pin),
+            title: widget.isLoading ? 'Verifying...' : 'Verify',
+            textColor: AppColors.whiteColor,
+          ),
+          Gap(isWidth: false, isHeight: true, height: height * 0.3),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                "Didn't receive the OTP? ",
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              InkWell(
+                onTap: widget.onResend,
+                child: Text(
+                  "Resend OTP",
+                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
-              Gap(isWidth: false, isHeight: true, height: height * 0.04),
-              AppButton(
-                onPress: () {
-                  formKey.currentState!.validate();
-                  Navigator.pushNamed(context, RoutesName.accountEmptyScreen);
-                },
-                title: 'Validate',
-                textColor: AppColors.whiteColor,
-              ),
-              Gap(isWidth: false, isHeight: true, height: height * 0.3),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    "Didn't receive the OTP? ",
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  InkWell(
-                    onTap: () {},
-                    child: Text(
-                      "Resend OTP",
-                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              )
             ],
-          ),
-        ),
-      ],
+          )
+        ],
+      ),
     );
   }
 }

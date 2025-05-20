@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 class TopAgent extends StatelessWidget {
   final String path, name;
-  const TopAgent({Key? key, required this.name, required this.path})
-      : super(key: key);
+  const TopAgent({super.key, required this.name, required this.path});
 
   @override
   Widget build(BuildContext context) {

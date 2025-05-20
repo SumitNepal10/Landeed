@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 class CustomSearchBar extends StatelessWidget {
   final Function(String) onSearch;
+  final Function(String)? onSubmitted;
   final VoidCallback onFilterTap;
   final TextEditingController searchController;
 
   const CustomSearchBar({
     super.key,
     required this.onSearch,
+    this.onSubmitted,
     required this.onFilterTap,
     required this.searchController,
   });
@@ -40,6 +42,7 @@ class CustomSearchBar extends StatelessWidget {
                     child: TextField(
                       controller: searchController,
                       onChanged: onSearch,
+                      onSubmitted: onSubmitted,
                       decoration: InputDecoration(
                         hintText: 'What are you looking for?',
                         border: InputBorder.none,

@@ -5,8 +5,7 @@ class HomeCategory extends StatefulWidget {
   final String title;
   final bool active;
 
-  const HomeCategory({Key? key, required this.title, required this.active})
-      : super(key: key);
+  const HomeCategory({super.key, required this.title, required this.active});
 
   @override
   State<HomeCategory> createState() => _HomeCategoryState();
@@ -15,6 +14,7 @@ class HomeCategory extends StatefulWidget {
 class _HomeCategoryState extends State<HomeCategory> {
   late bool isActive;
 
+  @override
   void initState() {
     isActive = widget.active;
   }

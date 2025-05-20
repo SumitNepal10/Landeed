@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/app_button.dart';
-import 'package:partice_project/components/gap.dart';
-import 'package:partice_project/components/login_footer.dart';
-import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/services/api_service.dart';
-import 'package:partice_project/utils/route_name.dart';
+import 'package:landeed/components/app_button.dart';
+import 'package:landeed/components/gap.dart';
+import 'package:landeed/components/social_login_buttons.dart';
+import 'package:landeed/constant/colors.dart';
+import 'package:landeed/utils/route_name.dart';
 import 'package:provider/provider.dart';
-import 'package:partice_project/services/auth_service.dart';
+import 'package:landeed/services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -32,7 +31,7 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  Future<void> _signup() async {
+  Future<void> _sendOTP() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -47,7 +46,7 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, RoutesName.homeScreen);
+        Navigator.pushReplacementNamed(context, RoutesName.loginScreen);
       }
     } catch (e) {
       if (mounted) {
@@ -166,8 +165,8 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   Gap(isWidth: false, isHeight: true, height: height * 0.035),
                   AppButton(
-                    onPress: _isLoading ? () {} : () => _signup(),
-                    title: _isLoading ? "Creating Account..." : "Sign Up",
+                    onPress: _isLoading ? () {} : () => _sendOTP(),
+                    title: _isLoading ? "Sending OTP..." : "Sign Up",
                     textColor: AppColors.whiteColor,
                     isButtonIcon: true,
                     height: height * 0.08,
@@ -198,7 +197,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ],
                   ),
-                  const LoginFooter()
+                  const SocialLoginButtons()
                 ],
               ),
             ),

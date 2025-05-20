@@ -16,12 +16,12 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['property_approved', 'property_rejected', 'system'],
+    enum: ['property_approved', 'property_rejected', 'property_verified', 'system'],
     required: true,
   },
   propertyId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ToBeVerifiedProperty',
+    ref: 'Property',
   },
   isRead: {
     type: Boolean,

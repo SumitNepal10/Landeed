@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 class AppPadding extends StatelessWidget {
   final double padddingValue;
   final Widget child;
-  const AppPadding({Key? key, required this.padddingValue, required this.child})
-      : super(key: key);
+  const AppPadding({super.key, required this.padddingValue, required this.child});
 
   @override
   Widget build(BuildContext context) {

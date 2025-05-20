@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:partice_project/components/bottomSheet/edit_location.dart';
 import 'package:partice_project/components/gap.dart';
 import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/screens/account_location_screen.dart';
-import 'package:partice_project/screens/promotion/promotion_screen.dart';
 import 'package:partice_project/utils/route_name.dart';
 
 class HomeHeader extends StatelessWidget {

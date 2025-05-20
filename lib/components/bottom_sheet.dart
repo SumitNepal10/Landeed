@@ -10,8 +10,7 @@ class BottomSheetModal extends StatelessWidget {
   final double height;
   final bool condition;
   const BottomSheetModal(
-      {Key? key, this.title = '', this.height = 50, this.condition = false})
-      : super(key: key);
+      {super.key, this.title = '', this.height = 50, this.condition = false});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +28,7 @@ class BottomSheetModal extends StatelessWidget {
                 borderRadius: BorderRadius.circular(40.0),
               ),
               builder: (BuildContext context) {
-                return Container(
+                return SizedBox(
                   height: appHeight / 0.75,
                   child: Center(
                     child: Column(

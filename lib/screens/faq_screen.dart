@@ -77,6 +77,7 @@ class _FaqScreenState extends State<FaqScreen> {
                         hinit: "Try to 'how to'",
                         onValidator: (value) {
                           if (value.isEmpty) return "Search value can't empty";
+                          return null;
                         }),
                     Gap(isWidth: false, isHeight: true, height: height * 0.02),
                     Container(
@@ -122,7 +123,7 @@ class _FaqScreenState extends State<FaqScreen> {
                                 ],
                               ),
                             ),
-                            Container(
+                            SizedBox(
                               height: height / 4,
                               child: const TabBarView(
                                 children: [

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/constant/colors.dart';
+import 'package:landeed/constant/colors.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;

@@ -7,13 +7,13 @@ class ExploreCard extends StatelessWidget {
   final String title, rating, location, path;
   final bool isHeart;
   const ExploreCard({
-    Key? key,
+    super.key,
     required this.location,
     required this.title,
     required this.rating,
     required this.path,
     required this.isHeart,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

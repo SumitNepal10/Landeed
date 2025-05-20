@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/onboard_view.dart';
-import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/utils/route_name.dart';
-import 'package:partice_project/utils/storage.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:landeed/components/onboard_view.dart';
+import 'package:landeed/utils/route_name.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -20,6 +17,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void dispose() {
     controller.dispose();
     super.dispose();
+  }
+
+  void _navigateToLogin() {
+    Navigator.pushReplacementNamed(context, RoutesName.loginScreen);
   }
 
   @override
@@ -42,21 +43,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   subtitle:
                       "Lorem ipsum dolor sit amet, consectetur\nadipiscing elit, sed.",
                   path: "lib/assets/1.png",
-                  isLastPage: isLastPage),
+                  isLastPage: isLastPage,
+                  onFinish: isLastPage ? _navigateToLogin : null),
               OnboardView(
                   controller: controller,
                   title: "Fast sell your property\nin just one click ",
                   subtitle:
                       "Lorem ipsum dolor sit amet, consectetur\nadipiscing elit, sed.",
                   path: "lib/assets/2.png",
-                  isLastPage: isLastPage),
+                  isLastPage: isLastPage,
+                  onFinish: isLastPage ? _navigateToLogin : null),
               OnboardView(
                   controller: controller,
                   title: "Find perfect choice for\nyour future house ",
                   subtitle:
                       "Lorem ipsum dolor sit amet, consectetur\nadipiscing elit, sed.",
                   path: "lib/assets/3.png",
-                  isLastPage: isLastPage),
+                  isLastPage: isLastPage,
+                  onFinish: isLastPage ? _navigateToLogin : null),
             ],
           ),
         ),

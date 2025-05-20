@@ -20,7 +20,7 @@ class Helper {
       }));
     } else {
       Timer(const Duration(seconds: 3), (() {
-        Navigator.pushNamed(context, RoutesName.onboarding_screen);
+        Navigator.pushNamed(context, RoutesName.onboardingScreen);
       }));
     }
   }

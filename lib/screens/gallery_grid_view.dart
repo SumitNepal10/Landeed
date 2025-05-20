@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:partice_project/components/app_button.dart';
 import 'package:partice_project/components/gap.dart';
 import 'package:partice_project/components/header_title.dart';
 import 'package:partice_project/components/shared/screen.dart';

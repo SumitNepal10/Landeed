@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/gap.dart';
-import 'package:partice_project/constant/colors.dart';
+import 'package:landeed/components/gap.dart';
+import 'package:landeed/constant/colors.dart';
 
 class HeaderTitle extends StatelessWidget {
   final String title, title1, subtitle, middle, bottomTitle, bottomTitle2;
   final bool isMiddle, isBottomTitle, isUnderTitle;
   const HeaderTitle({
-    Key? key,
+    super.key,
     required this.title,
     this.title1 = "",
     this.subtitle = "",
@@ -16,7 +16,7 @@ class HeaderTitle extends StatelessWidget {
     this.isMiddle = false,
     this.isUnderTitle = false,
     this.isBottomTitle = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

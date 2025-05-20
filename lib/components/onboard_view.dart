@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/components/app_button.dart';
-import 'package:partice_project/components/gap.dart';
-import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/utils/route_name.dart';
-import 'package:partice_project/utils/storage.dart';
+import 'package:landeed/components/app_button.dart';
+import 'package:landeed/components/gap.dart';
+import 'package:landeed/constant/colors.dart';
+import 'package:landeed/utils/route_name.dart';
+import 'package:landeed/utils/storage.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class OnboardView extends StatelessWidget {
   final PageController controller;
   final String title, subtitle, path;
   final bool isLastPage;
+  final VoidCallback? onFinish;
 
   const OnboardView({
-    Key? key,
+    super.key,
     this.isLastPage = false,
     required this.controller,
     required this.title,
     required this.subtitle,
     required this.path,
-  }) : super(key: key);
+    this.onFinish,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +41,11 @@ class OnboardView extends StatelessWidget {
                 ),
                 AppButton(
                   onPress: () {
-                    controller.jumpToPage(2);
+                    if (onFinish != null) {
+                      onFinish!();
+                    } else {
+                      controller.jumpToPage(2);
+                    }
                   },
                   title: "Skip",
                   width: 100,
@@ -122,8 +128,9 @@ class OnboardView extends StatelessWidget {
                             onPress: () async {
                               final prefs = await myStroage();
                               prefs.setBool("showOnBoard", true);
-                              Navigator.pushNamed(
-                                  context, RoutesName.startedScreen);
+                              if (onFinish != null) {
+                                onFinish!();
+                              }
                             },
                             title: "Get Started",
                             width: MediaQuery.of(context).size.width * 0.5,

@@ -1,27 +1,52 @@
 const jwt = require('jsonwebtoken');
+const Admin = require('../models/Admin');
 const User = require('../models/User');
 
-const auth = async (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      throw new Error();
+      return res.status(401).json({ message: 'No token provided' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findOne({ _id: decoded._id });
+    const user = await User.findById(decoded.userId);
 
     if (!user) {
-      throw new Error();
+      return res.status(401).json({ message: 'Invalid token' });
     }
 
-    req.token = token;
     req.user = user;
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Please authenticate.' });
+    res.status(401).json({ message: 'Invalid token' });
   }
 };
 
-module.exports = auth; 
+const verifyAdminToken = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const admin = await Admin.findById(decoded.adminId);
+
+    if (!admin) {
+      return res.status(401).json({ message: 'Invalid admin token' });
+    }
+
+    req.admin = admin;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid admin token' });
+  }
+};
+
+module.exports = {
+  verifyToken,
+  verifyAdminToken
+}; 

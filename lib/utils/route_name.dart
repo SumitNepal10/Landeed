@@ -23,4 +23,7 @@ class RoutesName {
   static const String topLocationDetailsScreen = 'topLocationDetailsScreen';
   static const String topAgentScreen = 'topAgentScreen';
   static const String agentProfileScreen = 'agentProfileScreen';
+  static const String adminDashboard = 'adminDashboard';
+  static const String myPropertiesScreen = 'myPropertiesScreen';
+  static const String notificationsScreen = 'notificationsScreen';
 }

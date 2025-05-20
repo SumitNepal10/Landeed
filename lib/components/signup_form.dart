@@ -56,10 +56,11 @@ class _SignupFormState extends State<SignupForm> {
                   leftIcon: true,
                   icon: const Icon(Icons.man),
                   onValidator: (value) {
-                    if (value.isEmpty)
+                    if (value.isEmpty) {
                       return 'Enter fullname';
-                    else if (value.length < 3)
+                    } else if (value.length < 3)
                       return "Full name at least 3 characters";
+                    return null;
                   }),
               Gap(isWidth: false, isHeight: true, height: height * 0.019),
               AppInput(
@@ -75,10 +76,11 @@ class _SignupFormState extends State<SignupForm> {
                   leftIcon: true,
                   icon: const Icon(Icons.email),
                   onValidator: (value) {
-                    if (value.isEmpty)
+                    if (value.isEmpty) {
                       return 'Enter email';
-                    else if (!helper.emailValid(value))
+                    } else if (!helper.emailValid(value))
                       return "Enter invalid email";
+                    return null;
                   }),
               Gap(isWidth: false, isHeight: true, height: height * 0.019),
               AppInput(
@@ -94,10 +96,11 @@ class _SignupFormState extends State<SignupForm> {
                   icon: const Icon(Icons.lock),
                   isFilled: true,
                   onValidator: (value) {
-                    if (value.isEmpty)
+                    if (value.isEmpty) {
                       return 'Enter Password';
-                    else if (value.length < 4)
+                    } else if (value.length < 4)
                       return "Password at least 6 characters ";
+                    return null;
                   }),
             ],
           ),

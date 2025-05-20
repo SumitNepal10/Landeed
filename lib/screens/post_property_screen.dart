@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:partice_project/models/property.dart';
-import 'package:partice_project/constant/colors.dart';
-import 'package:partice_project/services/property_service.dart';
+import 'package:landeed/models/property.dart';
+import 'package:landeed/constant/colors.dart';
+import 'package:landeed/services/property_service.dart';
+import 'package:landeed/services/auth_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:partice_project/utils/route_name.dart';
+import 'package:landeed/utils/route_name.dart';
+import 'package:provider/provider.dart';
+import 'package:landeed/utils/web_image_utils.dart';
 
 class PostPropertyScreen extends StatefulWidget {
-  const PostPropertyScreen({Key? key}) : super(key: key);
+  const PostPropertyScreen({super.key});
 
   @override
   State<PostPropertyScreen> createState() => _PostPropertyScreenState();
@@ -16,7 +20,7 @@ class PostPropertyScreen extends StatefulWidget {
 
 class _PostPropertyScreenState extends State<PostPropertyScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _propertyService = PropertyService();
+  late final PropertyService _propertyService;
   bool _isLoading = false;
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
@@ -31,8 +35,8 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
   final _livingRoomsController = TextEditingController();
 
   String _selectedType = 'Apartment';
-  String _selectedPurpose = 'For Sale';
-  List<XFile> _images = [];
+  String _selectedPurpose = 'Sale';
+  final List<XFile> _images = [];
   final ImagePicker _picker = ImagePicker();
   bool _isNegotiable = false;
   bool _isFurnished = false;
@@ -47,12 +51,11 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
     'House',
     'Apartment',
     'Flat',
-    'Commercial Space',
   ];
 
   final List<String> _purposes = [
-    'For Sale',
-    'For Rent',
+    'Sale',
+    'Rent',
   ];
 
   final List<String> _floors = [
@@ -74,6 +77,15 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
     'South-East',
     'South-West',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _propertyService = PropertyService(
+      Provider.of<AuthService>(context, listen: false),
+    );
+    _selectedPurpose = 'Sale';
+  }
 
   Future<void> _pickImages() async {
     final List<XFile> pickedFiles = await _picker.pickMultiImage();
@@ -106,29 +118,36 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
         'swimmingPool': _hasSwimmingPool,
       };
 
-      final success = await _propertyService.uploadProperty(
-        title: _titleController.text,
-        type: _selectedType,
-        purpose: _selectedPurpose,
-        location: _locationController.text,
-        size: _sizeController.text,
-        price: _priceController.text,
-        isNegotiable: _isNegotiable,
-        description: _descriptionController.text,
-        availabilityDate: _availabilityController.text,
-        contactInfo: _contactController.text,
-        images: _images,
-        roomDetails: roomDetails,
-        features: features,
-        floorLevel: _selectedFloor,
-        facingDirection: _selectedDirection,
-      );
+      final propertyData = {
+        'title': _titleController.text,
+        'type': _selectedType,
+        'purpose': _selectedPurpose,
+        'location': _locationController.text,
+        'size': _sizeController.text,
+        'price': _priceController.text,
+        'isNegotiable': _isNegotiable,
+        'description': _descriptionController.text,
+        'availabilityDate': _availabilityController.text,
+        'contactInfo': _contactController.text,
+        'images': _images.map((image) => image.path).toList(),
+        'roomDetails': roomDetails,
+        'features': features,
+        'floorLevel': _selectedFloor,
+        'facingDirection': _selectedDirection,
+      };
+
+      // Convert XFile objects to their paths
+      final imagePaths = _images.map((image) => image.path).toList();
+      propertyData['images'] = imagePaths;
+
+      final success = await _propertyService.uploadProperty(propertyData);
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Property uploaded successfully!'),
+            content: Text('Property submitted successfully! It will be reviewed by our team before being published.'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 5),
           ),
         );
         
@@ -158,19 +177,67 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
   }
 
   Widget _buildImagePreview(XFile image) {
-    return Image.network(
-      image.path,
-      width: 100,
-      height: 100,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
+    return Stack(
+      children: [
+        Container(
           width: 100,
           height: 100,
-          color: Colors.grey,
-          child: const Icon(Icons.error),
-        );
-      },
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: kIsWeb
+                ? FutureBuilder<String>(
+                    future: WebImageUtils.getImageUrl(image),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Container(
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return Container(
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.error),
+                        );
+                      }
+                      return Image.network(
+                        snapshot.data!,
+                        fit: BoxFit.cover,
+                      );
+                    },
+                  )
+                : Image.file(
+                    File(image.path),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.error),
+                      );
+                    },
+                  ),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          right: 0,
+          child: IconButton(
+            icon: const Icon(Icons.close, color: Colors.red),
+            onPressed: () {
+              setState(() {
+                _images.remove(image);
+              });
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -214,11 +281,16 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
                           value: _selectedType,
                           decoration: const InputDecoration(
                             labelText: 'Property Type',
+                            contentPadding: EdgeInsets.symmetric(horizontal: 8),
                           ),
+                          isExpanded: true,
                           items: _propertyTypes.map((String type) {
                             return DropdownMenuItem<String>(
                               value: type,
-                              child: Text(type),
+                              child: Text(
+                                type,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
@@ -234,11 +306,16 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
                           value: _selectedPurpose,
                           decoration: const InputDecoration(
                             labelText: 'Purpose',
+                            contentPadding: EdgeInsets.symmetric(horizontal: 8),
                           ),
+                          isExpanded: true,
                           items: _purposes.map((String purpose) {
                             return DropdownMenuItem<String>(
                               value: purpose,
-                              child: Text(purpose),
+                              child: Text(
+                                purpose,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
@@ -251,6 +328,105 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
+
+                  // Dynamic fields based on property type
+                  if (_selectedType != 'Land') ...[
+                    // Room Details
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _roomsController,
+                            decoration: const InputDecoration(
+                              labelText: 'Bedrooms',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _bathroomsController,
+                            decoration: const InputDecoration(
+                              labelText: 'Bathrooms',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _kitchenController,
+                            decoration: const InputDecoration(
+                              labelText: 'Kitchens',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _livingRoomsController,
+                            decoration: const InputDecoration(
+                              labelText: 'Living Rooms',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Features
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _isFurnished,
+                          onChanged: (value) {
+                            setState(() {
+                              _isFurnished = value!;
+                            });
+                          },
+                        ),
+                        const Text('Furnished'),
+                        Checkbox(
+                          value: _hasParking,
+                          onChanged: (value) {
+                            setState(() {
+                              _hasParking = value!;
+                            });
+                          },
+                        ),
+                        const Text('Parking'),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _hasGarden,
+                          onChanged: (value) {
+                            setState(() {
+                              _hasGarden = value!;
+                            });
+                          },
+                        ),
+                        const Text('Garden'),
+                        Checkbox(
+                          value: _hasSwimmingPool,
+                          onChanged: (value) {
+                            setState(() {
+                              _hasSwimmingPool = value!;
+                            });
+                          },
+                        ),
+                        const Text('Swimming Pool'),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   // Location
                   TextFormField(
@@ -322,174 +498,61 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Room Details
-                  const Text(
-                    'Room Details',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  // Room Details (Floor Level and Facing Direction)
+                  if (_selectedType != 'Land') ...[
+                    const Text(
+                      'Room Details',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _roomsController,
-                          decoration: const InputDecoration(
-                            labelText: 'Bedrooms',
-                            hintText: 'Number of bedrooms',
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedFloor,
+                            decoration: const InputDecoration(
+                              labelText: 'Floor Level',
+                            ),
+                            items: _floors.map((String floor) {
+                              return DropdownMenuItem<String>(
+                                value: floor,
+                                child: Text(floor),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedFloor = newValue!;
+                              });
+                            },
                           ),
-                          keyboardType: TextInputType.number,
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _bathroomsController,
-                          decoration: const InputDecoration(
-                            labelText: 'Bathrooms',
-                            hintText: 'Number of bathrooms',
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedDirection,
+                            decoration: const InputDecoration(
+                              labelText: 'Facing Direction',
+                            ),
+                            items: _directions.map((String direction) {
+                              return DropdownMenuItem<String>(
+                                value: direction,
+                                child: Text(direction),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedDirection = newValue!;
+                              });
+                            },
                           ),
-                          keyboardType: TextInputType.number,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _kitchenController,
-                          decoration: const InputDecoration(
-                            labelText: 'Kitchen',
-                            hintText: 'Number of kitchens',
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _livingRoomsController,
-                          decoration: const InputDecoration(
-                            labelText: 'Living Rooms',
-                            hintText: 'Number of living rooms',
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Additional Features
-                  const Text(
-                    'Additional Features',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CheckboxListTile(
-                          title: const Text('Furnished'),
-                          value: _isFurnished,
-                          onChanged: (value) {
-                            setState(() {
-                              _isFurnished = value!;
-                            });
-                          },
-                        ),
-                      ),
-                      Expanded(
-                        child: CheckboxListTile(
-                          title: const Text('Parking'),
-                          value: _hasParking,
-                          onChanged: (value) {
-                            setState(() {
-                              _hasParking = value!;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CheckboxListTile(
-                          title: const Text('Garden'),
-                          value: _hasGarden,
-                          onChanged: (value) {
-                            setState(() {
-                              _hasGarden = value!;
-                            });
-                          },
-                        ),
-                      ),
-                      Expanded(
-                        child: CheckboxListTile(
-                          title: const Text('Swimming Pool'),
-                          value: _hasSwimmingPool,
-                          onChanged: (value) {
-                            setState(() {
-                              _hasSwimmingPool = value!;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedFloor,
-                          decoration: const InputDecoration(
-                            labelText: 'Floor Level',
-                          ),
-                          items: _floors.map((String floor) {
-                            return DropdownMenuItem<String>(
-                              value: floor,
-                              child: Text(floor),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedFloor = newValue!;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedDirection,
-                          decoration: const InputDecoration(
-                            labelText: 'Facing Direction',
-                          ),
-                          items: _directions.map((String direction) {
-                            return DropdownMenuItem<String>(
-                              value: direction,
-                              child: Text(direction),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedDirection = newValue!;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                  ],
 
                   // Description
                   TextFormField(
@@ -569,22 +632,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
                         itemBuilder: (context, index) {
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
-                            child: Stack(
-                              children: [
-                                _buildImagePreview(_images[index]),
-                                Positioned(
-                                  right: 0,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.close, color: Colors.red),
-                                    onPressed: () {
-                                      setState(() {
-                                        _images.removeAt(index);
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
+                            child: _buildImagePreview(_images[index]),
                           );
                         },
                       ),

@@ -10,7 +10,7 @@ const adminAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const admin = await Admin.findById(decoded.id);
+    const admin = await Admin.findById(decoded.adminId);
 
     if (!admin || !admin.isActive) {
       throw new Error();

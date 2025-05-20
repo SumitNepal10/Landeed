@@ -6,12 +6,12 @@ class Gap extends StatelessWidget {
   final double width, height;
 
   const Gap({
-    Key? key,
+    super.key,
     required this.isWidth,
     required this.isHeight,
     this.width = 0.0,
     this.height = 0.0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

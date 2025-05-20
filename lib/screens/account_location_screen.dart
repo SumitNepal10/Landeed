@@ -67,6 +67,7 @@ class _AccountLocationScreenState extends State<AccountLocationScreen> {
                 hinit: "Find location...",
                 onValidator: (value) {
                   if (value.isEmpty) return;
+                  return null;
                 })),
         Positioned(
           bottom: 100,

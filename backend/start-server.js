@@ -1,6 +1,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
+// Use the server.js file in the root directory
 const server = spawn('node', ['server.js'], {
   stdio: 'inherit',
   shell: true,
