@@ -32,10 +32,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   void initState() {
     super.initState();
-    _chatService = ChatService(
-      baseUrl: widget.baseUrl,
-      userId: widget.userId,
-    );
+    _chatService = Provider.of<ChatService>(context, listen: false);
+    
+    if (!_chatService.socket.connected) {
+      _chatService.socket.connect();
+    }
+
     _loadConversations();
   }
 
@@ -179,89 +181,154 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
                         return Card(
                           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(12),
-                            leading: CircleAvatar(
-                              radius: 24,
-                              backgroundColor: AppColors.primaryColor,
-                              child: Text(
-                                otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : '',
+                          child: Dismissible(
+                            key: Key(conversation['_id'].toString()),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              color: Colors.red,
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                              child: const Icon(Icons.delete, color: Colors.white),
+                            ),
+                            onDismissed: (direction) {
+                              _deleteConversation(conversation['_id'].toString(), index);
+                            },
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(12),
+                              leading: CircleAvatar(
+                                radius: 24,
+                                backgroundColor: AppColors.primaryColor,
+                                child: Text(
+                                  otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : '',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                otherUserName,
                                 style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
                               ),
-                            ),
-                            title: Text(
-                              otherUserName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                lastMessage?.toString() ?? 'No messages yet',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  _formatTimestamp(lastMessageTime),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  lastMessage?.toString() ?? 'No messages yet',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: Colors.grey[600],
-                                    fontSize: 12,
+                                    fontSize: 14,
                                   ),
                                 ),
-                                if (unreadCount > 0) ...[
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryColor,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Text(
-                                      unreadCount.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                              ),
+                              trailing: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: MediaQuery.of(context).size.width * 0.25,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _formatTimestamp(lastMessageTime),
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
                                         fontSize: 12,
-                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ChatScreen(
-                                    userId: widget.userId,
-                                    receiverId: otherUserId,
-                                    receiverName: otherUserName,
-                                    receiverEmail: otherUserEmail,
-                                    baseUrl: widget.baseUrl,
-                                  ),
+                                    if (unreadCount > 0) ...[
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          unreadCount.toString(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                              ).then((_) => _loadConversations());
-                            },
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatScreen(
+                                      userId: widget.userId,
+                                      receiverId: otherUserId,
+                                      receiverName: otherUserName,
+                                      receiverEmail: otherUserEmail,
+                                      baseUrl: ApiConstants.baseUrl,
+                                    ),
+                                  ),
+                                ).then((_) => _loadConversations());
+                              },
+                            ),
                           ),
                         );
                       },
                     ),
     );
+  }
+
+  void _deleteConversation(String conversationId, int index) async {
+    final removedConversation = _conversations[index];
+    final otherUser = removedConversation['otherUser'];
+    final otherUserEmail = otherUser?['email'] ?? '';
+    
+    // Construct conversation ID using current user's email and other user's email
+    final currentUserEmail = _chatService.currentUserEmail;
+    if (currentUserEmail == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to delete: User email not available'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Sort emails alphabetically to ensure consistent conversation ID
+    final sortedEmails = [currentUserEmail, otherUserEmail]..sort();
+    final conversationId = '${sortedEmails[0]}_${sortedEmails[1]}';
+
+    setState(() {
+      _conversations.removeAt(index);
+    });
+
+    try {
+      await _chatService.deleteConversation(conversationId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Conversation deleted'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error deleting conversation: $e');
+      setState(() {
+        _conversations.insert(index, removedConversation);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete conversation: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   String _formatTimestamp(DateTime timestamp) {
@@ -277,11 +344,5 @@ class _ChatListScreenState extends State<ChatListScreen> {
     } else {
       return 'just now';
     }
-  }
-
-  @override
-  void dispose() {
-    _chatService.dispose();
-    super.dispose();
   }
 } 

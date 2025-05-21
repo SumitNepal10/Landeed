@@ -146,16 +146,14 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update a property
-router.patch('/:id', verifyToken, async (req, res) => {
+router.patch('/:id', async (req, res) => {
   try {
     const property = await Property.findById(req.params.id);
     if (!property) {
       return res.status(404).json({ message: 'Property not found' });
     }
-    if (property.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
     Object.assign(property, req.body);
+    property.status = 'pending'; // Set status to pending after edit
     await property.save();
     res.json(property);
   } catch (error) {
@@ -164,16 +162,13 @@ router.patch('/:id', verifyToken, async (req, res) => {
 });
 
 // Delete a property
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const property = await Property.findById(req.params.id);
     if (!property) {
       return res.status(404).json({ message: 'Property not found' });
     }
-    if (property.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-    await property.remove();
+    await property.deleteOne();
     res.json({ message: 'Property deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });

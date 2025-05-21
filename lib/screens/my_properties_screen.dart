@@ -4,6 +4,7 @@ import 'package:landeed/services/property_service.dart';
 import 'package:landeed/services/auth_service.dart';
 import 'package:landeed/components/property_card.dart';
 import 'package:landeed/models/property.dart';
+import 'package:landeed/screens/post_property_screen.dart';
 
 class MyPropertiesScreen extends StatefulWidget {
   const MyPropertiesScreen({Key? key}) : super(key: key);
@@ -127,8 +128,79 @@ class _MyPropertiesScreenState extends State<MyPropertiesScreen> {
                           final property = _properties[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16),
-                            child: PropertyCard(
-                              property: property,
+                            child: Stack(
+                              children: [
+                                PropertyCard(
+                                  property: property,
+                                ),
+                                Positioned(
+                                  top: 32,
+                                  left: 8,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    tooltip: 'Delete Property',
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Delete Property'),
+                                          content: const Text('Are you sure you want to delete this property?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context, false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context, true),
+                                              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        try {
+                                          await _propertyService.deleteProperty(property.id);
+                                          setState(() {
+                                            _properties.removeAt(index);
+                                          });
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Property deleted successfully'),
+                                              backgroundColor: Colors.green,
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Failed to delete property: $e'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    },
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 32,
+                                  right: 8,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.blue),
+                                    tooltip: 'Edit Property',
+                                    onPressed: () async {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PostPropertyScreen(property: property),
+                                        ),
+                                      ).then((value) {
+                                        // Reload properties after editing
+                                        _loadProperties();
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         },

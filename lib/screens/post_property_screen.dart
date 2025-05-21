@@ -12,7 +12,8 @@ import 'package:provider/provider.dart';
 import 'package:landeed/utils/web_image_utils.dart';
 
 class PostPropertyScreen extends StatefulWidget {
-  const PostPropertyScreen({super.key});
+  final Property? property;
+  const PostPropertyScreen({super.key, this.property});
 
   @override
   State<PostPropertyScreen> createState() => _PostPropertyScreenState();
@@ -37,6 +38,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
   String _selectedType = 'Apartment';
   String _selectedPurpose = 'Sale';
   final List<XFile> _images = [];
+  final List<String> _existingImageUrls = [];
   final ImagePicker _picker = ImagePicker();
   bool _isNegotiable = false;
   bool _isFurnished = false;
@@ -85,14 +87,58 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
       Provider.of<AuthService>(context, listen: false),
     );
     _selectedPurpose = 'Sale';
+
+    // If editing, pre-fill fields
+    final prop = widget.property;
+    if (prop != null) {
+      _titleController.text = prop.title;
+      _locationController.text = prop.location;
+      _sizeController.text = prop.area.toString();
+      _priceController.text = prop.price.toString();
+      _descriptionController.text = prop.description;
+      _contactController.text = prop.userEmail ?? '';
+      _selectedType = prop.propertyType;
+      _selectedPurpose = prop.isSale ? 'Sale' : 'Rent';
+      _isNegotiable = false; // You can map this if you have the field
+      _existingImageUrls.clear();
+      _existingImageUrls.addAll(prop.images);
+      // Room details
+      _roomsController.text = prop.bedrooms.toString();
+      _bathroomsController.text = prop.bathrooms.toString();
+      // Features, floor, direction, etc. can be mapped similarly if needed
+    }
   }
 
   Future<void> _pickImages() async {
+    if (_images.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maximum 5 images allowed'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final List<XFile> pickedFiles = await _picker.pickMultiImage();
     if (pickedFiles.isNotEmpty) {
+      // Calculate how many more images can be added
+      final remainingSlots = 5 - _images.length;
+      final filesToAdd = pickedFiles.take(remainingSlots).toList();
+      
       setState(() {
-        _images.addAll(pickedFiles);
+        _images.addAll(filesToAdd);
       });
+
+      // Show warning if some images were not added
+      if (pickedFiles.length > remainingSlots) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Only ${remainingSlots} more image(s) allowed'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
   }
 
@@ -129,28 +175,40 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
         'description': _descriptionController.text,
         'availabilityDate': _availabilityController.text,
         'contactInfo': _contactController.text,
-        'images': _images.map((image) => image.path).toList(),
+        'images': _existingImageUrls.map((url) => url).toList(),
         'roomDetails': roomDetails,
         'features': features,
         'floorLevel': _selectedFloor,
         'facingDirection': _selectedDirection,
       };
 
-      // Convert XFile objects to their paths
-      final imagePaths = _images.map((image) => image.path).toList();
-      propertyData['images'] = imagePaths;
+      // Combine existing and new images for submission
+      final allImages = [
+        ..._existingImageUrls, // URLs of images already on the server
+        ..._images.map((image) => image.path), // New images to upload
+      ];
+      propertyData['images'] = allImages;
 
-      final success = await _propertyService.uploadProperty(propertyData);
+      bool success = false;
+      if (widget.property != null) {
+        // Editing: PATCH
+        await _propertyService.editProperty(widget.property!.id, propertyData);
+        success = true;
+      } else {
+        // Creating: POST
+        success = await _propertyService.uploadProperty(propertyData);
+      }
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Property submitted successfully! It will be reviewed by our team before being published.'),
+          SnackBar(
+            content: Text(widget.property != null
+                ? 'Property updated successfully! It will be reviewed by our team before being published.'
+                : 'Property submitted successfully! It will be reviewed by our team before being published.'),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 5),
+            duration: const Duration(seconds: 5),
           ),
         );
-        
         // Navigate to home screen and clear the stack
         Navigator.pushNamedAndRemoveUntil(
           context,
@@ -557,14 +615,27 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
                   // Description
                   TextFormField(
                     controller: _descriptionController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Description',
-                      hintText: 'Detailed overview of the property',
+                      hintText: 'Detailed overview of the property (70-200 words)',
+                      helperText: '${_descriptionController.text.split(' ').where((word) => word.isNotEmpty).length} words',
                     ),
                     maxLines: 4,
+                    onChanged: (value) {
+                      setState(() {
+                        // Update the helper text with word count
+                      });
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a description';
+                      }
+                      final wordCount = value.split(' ').where((word) => word.isNotEmpty).length;
+                      if (wordCount < 70) {
+                        return 'Description must be at least 70 words';
+                      }
+                      if (wordCount > 200) {
+                        return 'Description cannot exceed 200 words';
                       }
                       return null;
                     },
@@ -610,7 +681,7 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
 
                   // Photo Upload
                   const Text(
-                    'Property Photos',
+                    'Property Photos (Max 5)',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -620,21 +691,51 @@ class _PostPropertyScreenState extends State<PostPropertyScreen> {
                   ElevatedButton.icon(
                     onPressed: _pickImages,
                     icon: const Icon(Icons.add_photo_alternate),
-                    label: const Text('Add Photos'),
+                    label: Text('Add Photos (${_existingImageUrls.length + _images.length}/5)'),
                   ),
                   const SizedBox(height: 8),
-                  if (_images.isNotEmpty)
+                  if (_existingImageUrls.isNotEmpty || _images.isNotEmpty)
                     SizedBox(
                       height: 100,
-                      child: ListView.builder(
+                      child: ListView(
                         scrollDirection: Axis.horizontal,
-                        itemCount: _images.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: _buildImagePreview(_images[index]),
-                          );
-                        },
+                        children: [
+                          // Existing images from server
+                          ..._existingImageUrls.map((url) => Stack(
+                                children: [
+                                  Container(
+                                    width: 100,
+                                    height: 100,
+                                    margin: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(url, fit: BoxFit.cover),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 0,
+                                    right: 0,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.close, color: Colors.red),
+                                      onPressed: () {
+                                        setState(() {
+                                          _existingImageUrls.remove(url);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              )),
+                          // New images picked in this session
+                          ..._images.map((image) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: _buildImagePreview(image),
+                              )),
+                        ],
                       ),
                     ),
                   const SizedBox(height: 24),

@@ -4,6 +4,7 @@ import '../models/property.dart';
 import '../services/chat_service.dart';
 import '../services/auth_service.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 
 class ChatScreen extends StatefulWidget {
   final String userId;
@@ -33,42 +34,51 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final List<Message> _messages = [];
 
+  // Stream subscription for incoming messages
+  StreamSubscription<Message>? _messagesSubscription;
+
   @override
   void initState() {
     super.initState();
-    _chatService = ChatService(
-      baseUrl: widget.baseUrl,
-      userId: widget.userId,
-    );
-    _setupMessageListeners();
+    // Get the ChatService instance from the Provider
+    _chatService = Provider.of<ChatService>(context, listen: false);
+    
+    // Although ChatService is now provided, ensure the socket is connected and joined
+    // This might be redundant if handled globally, but good for ensuring in this screen context
+    if (!_chatService.socket.connected) {
+      _chatService.socket.connect();
+      // Potentially re-emit 'join' if needed after a manual connect call
+      // if (_chatService.currentUserEmail != null) {
+      //    _chatService.socket.emit('join', _chatService.currentUserEmail);
+      // }
+    }
+
+    _listenToMessagesStream();
     _loadChatHistory();
   }
 
-  void _setupMessageListeners() {
-    _chatService.onMessageReceivedFromSocket((message) {
-      setState(() {
-        _messages.add(message);
-      });
-      _scrollToBottom();
-      _chatService.markAsDelivered(message.id);
-    });
-
-    _chatService.onMessageDeliveredFromSocket((message) {
-      setState(() {
-        final index = _messages.indexWhere((m) => m.id == message.id);
-        if (index != -1) {
-          _messages[index] = message;
+  void _listenToMessagesStream() {
+    // Listen for incoming messages
+    _messagesSubscription = _chatService.messagesStream.listen((message) {
+      print('Received message from stream in ChatScreen: ${message.toJson()}');
+      // Only add the message if it's for the current conversation
+      if (message.senderId == widget.receiverEmail || message.receiverId == widget.receiverEmail) {
+        setState(() {
+          // Prevent duplicates and ensure messages are in correct order if history loads later
+          final existingIndex = _messages.indexWhere((m) => m.id == message.id);
+          if (existingIndex == -1) {
+            _messages.add(message);
+            _scrollToBottom();
+          } else {
+             // Update existing message (e.g., status changes)
+             _messages[existingIndex] = message;
+          }
+        });
+        // Mark the received message as delivered
+        if (message.receiverId == _chatService.currentUserEmail) {
+           _chatService.markAsDelivered(message.id);
         }
-      });
-    });
-
-    _chatService.onMessageReadFromSocket((message) {
-      setState(() {
-        final index = _messages.indexWhere((m) => m.id == message.id);
-        if (index != -1) {
-          _messages[index] = message;
-        }
-      });
+      }
     });
   }
 
@@ -109,21 +119,57 @@ class _ChatScreenState extends State<ChatScreen> {
     if (message.isEmpty) return;
 
     try {
+      // Create a temporary message object
+      final tempMessage = Message(
+        id: DateTime.now().millisecondsSinceEpoch.toString(), // Temporary ID
+        senderId: _chatService.currentUserEmail ?? '',
+        receiverId: widget.receiverEmail,
+        propertyId: widget.property?.id ?? '',
+        content: message,
+        timestamp: DateTime.now(),
+        status: 'sending',
+      );
+
+      // Add message to UI immediately
+      setState(() {
+        _messages.add(tempMessage);
+      });
+      _scrollToBottom();
+      _messageController.clear();
+
+      // Send message to server
       await _chatService.sendMessageToSocket(
         receiverEmail: widget.receiverEmail,
         propertyId: widget.property?.id ?? '',
         message: message,
       );
 
-      _messageController.clear();
-      // Refresh messages immediately after sending
-      await _loadChatHistory();
+      // Update message status to sent
+      setState(() {
+        final index = _messages.indexWhere((m) => m.id == tempMessage.id);
+        if (index != -1) {
+          _messages[index] = _messages[index].copyWith(status: 'sent');
+        }
+      });
     } catch (e) {
+      print('Error sending message: $e');
+      // Update message status to failed
+      setState(() {
+        final index = _messages.indexWhere((m) => m.content == message);
+        if (index != -1) {
+          _messages[index] = _messages[index].copyWith(status: 'failed');
+        }
+      });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to send message: ${e.toString()}'),
             backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: _sendMessage,
+            ),
           ),
         );
       }
@@ -165,6 +211,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       horizontal: 16,
                       vertical: 10,
                     ),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.75,
+                    ),
                     decoration: BoxDecoration(
                       color: isMe
                           ? Theme.of(context).primaryColor
@@ -173,6 +222,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           message.content,
@@ -181,14 +231,34 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          _formatTimestamp(message.timestamp),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isMe
-                                ? Colors.white.withOpacity(0.7)
-                                : Colors.black54,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (message.status == 'sending')
+                              const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                                ),
+                              ),
+                            if (message.status == 'failed')
+                              Icon(Icons.error_outline, 
+                                size: 12, 
+                                color: isMe ? Colors.white70 : Colors.red,
+                              ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatTimestamp(message.timestamp),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isMe
+                                    ? Colors.white.withOpacity(0.7)
+                                    : Colors.black54,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -251,9 +321,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
-    _chatService.dispose();
+    // No need to dispose _chatService here as it's provided
     _messageController.dispose();
     _scrollController.dispose();
+    _messagesSubscription?.cancel(); // Cancel the stream subscription
     super.dispose();
   }
 } 

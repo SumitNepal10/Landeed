@@ -7,6 +7,7 @@ import 'package:landeed/screens/favorite_properties_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:landeed/providers/notification_provider.dart';
 import 'package:landeed/utils/route_name.dart';
+import 'package:landeed/screens/paginated_properties_screen.dart';
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
@@ -37,7 +38,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Center(child: Text('News')),  // Placeholder
+    const PaginatedPropertiesScreen(),
     const PostPropertyScreen(),
     const FavoritePropertiesScreen(),
     const MenuScreen(),

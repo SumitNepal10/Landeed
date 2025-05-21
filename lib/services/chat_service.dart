@@ -8,12 +8,24 @@ import '../constant/api_constants.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter/foundation.dart';
 import '../models/message.dart';
+import 'dart:async'; // Import for StreamController
+import 'package:flutter/foundation.dart';
 
-class ChatService {
+class ChatService extends ChangeNotifier {
   final AuthService _authService = AuthService();
   String? _currentUserEmail;
-  Function(ChatMessage)? onMessageReceived;
-  Function(bool)? onTypingStatusChanged;
+  // Stream controller for incoming messages
+  final _messageController = StreamController<Message>.broadcast();
+  
+  // Public stream for incoming messages
+  Stream<Message> get messagesStream => _messageController.stream;
+  
+  // Stream controller for typing status
+  final _typingStatusController = StreamController<Map<String, dynamic>>.broadcast();
+  
+  // Public stream for typing status
+  Stream<Map<String, dynamic>> get typingStatusStream => _typingStatusController.stream;
+
   late IO.Socket socket;
   final String baseUrl;
   final String userId;
@@ -36,17 +48,84 @@ class ChatService {
     socket = IO.io(baseUrl, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
-      'auth': {'userEmail': _currentUserEmail}
+      'auth': {'userEmail': _currentUserEmail},
+      'reconnection': true,
+      'reconnectionAttempts': 5,
+      'reconnectionDelay': 1000,
+      'timeout': 10000,
     });
 
     socket.connect();
+    
     socket.onConnect((_) {
       print('Connected to WebSocket');
-      socket.emit('join', _currentUserEmail);
+      if (_currentUserEmail != null) {
+        socket.emit('join', _currentUserEmail);
+      }
     });
 
-    socket.onDisconnect((_) => print('Disconnected from WebSocket'));
-    socket.onError((error) => print('Socket error: $error'));
+    socket.onDisconnect((_) {
+      print('Disconnected from WebSocket');
+      // Attempt to reconnect
+      // socket.connect(); // Removed automatic reconnect on disconnect to avoid potential loops
+    });
+
+    socket.onError((error) {
+      print('Socket error: $error');
+      // Attempt to reconnect on error
+      // socket.connect(); // Removed automatic reconnect on error to avoid potential loops
+    });
+
+    socket.onConnectError((error) {
+      print('Socket connection error: $error');
+      // Attempt to reconnect on connection error
+      // socket.connect(); // Removed automatic reconnect on connect error to avoid potential loops
+    });
+    
+    // Listen for incoming messages and add to stream
+    socket.on('receive_message', (data) {
+      print('Received message from socket: $data');
+      try {
+        final message = Message.fromJson(data);
+        _messageController.add(message);
+        // Notify listeners that a new message was received (optional, if UI listens directly to ChatService)
+        // notifyListeners(); 
+      } catch (e) {
+        print('Error parsing received socket message: $e for data: $data');
+      }
+    });
+    
+    // Listen for message delivered confirmations
+    socket.on('message_delivered', (data) {
+       print('Message delivered confirmation from socket: $data');
+       try {
+         final message = Message.fromJson(data);
+         // You could potentially update message status in a local list here
+         // and then call notifyListeners();
+       } catch (e) {
+         print('Error parsing delivered socket message: $e for data: $data');
+       }
+    });
+    
+    // Listen for message read confirmations
+    socket.on('message_read', (data) {
+       print('Message read confirmation from socket: $data');
+       try {
+         final message = Message.fromJson(data);
+         // You could potentially update message status in a local list here
+         // and then call notifyListeners();
+       } catch (e) {
+         print('Error parsing read socket message: $e for data: $data');
+       }
+    });
+    
+    // Listen for typing status updates and add to stream
+    socket.on('typing', (data) {
+       print('Typing status from socket: $data');
+       _typingStatusController.add(Map<String, dynamic>.from(data));
+       // Notify listeners about typing status changes (optional)
+       // notifyListeners();
+    });
   }
 
   void sendMessage({
@@ -151,42 +230,8 @@ class ChatService {
   void dispose() {
     socket.disconnect();
     socket.dispose();
-  }
-
-  void onMessageReceivedFromSocket(Function(Message) callback) {
-    socket.on('receive_message', (data) {
-      print('Received message from socket: $data');
-      try {
-        final message = Message.fromJson(data);
-        callback(message);
-      } catch (e) {
-        print('Error parsing received socket message: $e for data: $data');
-      }
-    });
-  }
-
-  void onMessageDeliveredFromSocket(Function(Message) callback) {
-    socket.on('message_delivered', (data) {
-      print('Message delivered confirmation from socket: $data');
-      try {
-        final message = Message.fromJson(data);
-        callback(message);
-      } catch (e) {
-        print('Error parsing delivered socket message: $e for data: $data');
-      }
-    });
-  }
-
-  void onMessageReadFromSocket(Function(Message) callback) {
-    socket.on('message_read', (data) {
-      print('Message read confirmation from socket: $data');
-      try {
-        final message = Message.fromJson(data);
-        callback(message);
-      } catch (e) {
-        print('Error parsing read socket message: $e for data: $data');
-      }
-    });
+    _messageController.close();
+    _typingStatusController.close();
   }
 
   Future<void> sendMessageToSocket({
@@ -194,8 +239,6 @@ class ChatService {
     required String propertyId,
     required String message,
   }) async {
-    print('Warning: sendMessageToSocket (HTTP POST) called. Review chat sending logic.');
-
     try {
       if (_currentUserEmail == null) {
         final userData = await _authService.getUser();
@@ -223,7 +266,10 @@ class ChatService {
 
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        socket.emit('message_sent', data);
+        socket.emit('message_sent', {
+          ...data,
+          'status': 'sent',
+        });
       } else {
         print('Failed to save message via HTTP: ${response.statusCode}');
         print('Response body: ${response.body}');
@@ -231,6 +277,30 @@ class ChatService {
       }
     } catch (e) {
       print('Error sending message via HTTP: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteConversation(String conversationId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}/chat/rooms/$conversationId');
+      final response = await http.delete(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any necessary authentication headers here
+          // 'Authorization': 'Bearer ${your_token}',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        print('Failed to delete conversation: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        throw Exception('Failed to delete conversation with status: ${response.statusCode}');
+      }
+      print('Conversation $conversationId deleted successfully on backend');
+    } catch (e) {
+      print('Error deleting conversation: $e');
       rethrow;
     }
   }

@@ -18,6 +18,7 @@ import 'services/favorites_service.dart';
 import 'package:landeed/utils/route_name.dart';
 import 'providers/property_provider.dart';
 import 'providers/notification_provider.dart';
+import 'package:landeed/services/chat_service.dart';
 
 void main() {
   runApp(
@@ -27,6 +28,10 @@ void main() {
         ChangeNotifierProvider(create: (_) => FavoritesService()),
         ChangeNotifierProvider(create: (_) => PropertyProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (context) => ChatService(
+          baseUrl: 'http://localhost:5000',
+          userId: 'user123',
+        )),
         ProxyProvider<AuthService, PropertyService>(
           update: (context, authService, previous) => PropertyService(authService),
         ),

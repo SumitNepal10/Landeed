@@ -6,6 +6,7 @@ import 'package:landeed/services/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'package:landeed/screens/chat_screen.dart';
 import 'package:landeed/constant/api_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class PropertyDescriptionScreen extends StatefulWidget {
   final Property? property;
@@ -113,6 +114,95 @@ class _PropertyDescriptionScreenState extends State<PropertyDescriptionScreen> {
     }
   }
 
+  Widget _buildImageGallery(List<String> images) {
+    if (images.isEmpty) {
+      return Container(
+        height: 200,
+        color: Colors.grey[200],
+        child: const Center(
+          child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+        ),
+      );
+    }
+
+    return Stack(
+      children: [
+        SizedBox(
+          height: 300,
+          width: double.infinity,
+          child: PageView.builder(
+            itemCount: images.length,
+            itemBuilder: (context, index) {
+              return CachedNetworkImage(
+                imageUrl: images[index],
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: Colors.grey[200],
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[200],
+                  child: const Center(
+                    child: Icon(Icons.error_outline, size: 50, color: Colors.grey),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        // Image counter (top right)
+        Positioned(
+          top: 16,
+          right: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Builder(
+              builder: (context) {
+                // Get the current page from the PageController if you want to show the current index
+                // For now, just show 1/total
+                return Text(
+                  '1/${images.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        // Page indicator dots (bottom center)
+        Positioned(
+          bottom: 16,
+          left: 0,
+          right: 0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              images.length,
+              (index) => Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).primaryColor.withOpacity(0.5),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -132,65 +222,64 @@ class _PropertyDescriptionScreenState extends State<PropertyDescriptionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              children: [
-                // Property Image
-                Image.network(
-                  property.imageUrl,
-                  width: double.infinity,
-                  height: 300,
-                  fit: BoxFit.cover,
-                ),
-                // Back Button and Favorite Button
-                Positioned(
-                  top: 40,
-                  left: 0,
-                  right: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: Colors.white,
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.black),
-                            onPressed: () => Navigator.pop(context),
+            // Combine image gallery and buttons in a single Stack
+            SizedBox(
+              height: 300,
+              width: double.infinity,
+              child: Stack(
+                children: [
+                  _buildImageGallery(property.images),
+                  // Back Button and Favorite Button
+                  Positioned(
+                    top: 40,
+                    left: 0,
+                    right: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Colors.white,
+                            child: IconButton(
+                              icon: const Icon(Icons.arrow_back, color: Colors.black),
+                              onPressed: () => Navigator.pop(context),
+                            ),
                           ),
-                        ),
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: Colors.white,
-                              child: IconButton(
-                                icon: const Icon(Icons.compare_arrows, color: Colors.black),
-                                onPressed: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/propertyComparison', // Update this route if you use a named route constant
-                                    arguments: {'property': property},
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            CircleAvatar(
-                              backgroundColor: Colors.white,
-                              child: IconButton(
-                                icon: Icon(
-                                  _isFavorite ? Icons.favorite : Icons.favorite_border,
-                                  color: _isFavorite ? Colors.red : Colors.black,
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.white,
+                                child: IconButton(
+                                  icon: const Icon(Icons.compare_arrows, color: Colors.black),
+                                  onPressed: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/propertyComparison', // Update this route if you use a named route constant
+                                      arguments: {'property': property},
+                                    );
+                                  },
                                 ),
-                                onPressed: _toggleFavorite,
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 8),
+                              CircleAvatar(
+                                backgroundColor: Colors.white,
+                                child: IconButton(
+                                  icon: Icon(
+                                    _isFavorite ? Icons.favorite : Icons.favorite_border,
+                                    color: _isFavorite ? Colors.red : Colors.black,
+                                  ),
+                                  onPressed: _toggleFavorite,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(16),

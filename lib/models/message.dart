@@ -17,6 +17,26 @@ class Message {
     required this.status,
   });
 
+  Message copyWith({
+    String? id,
+    String? senderId,
+    String? receiverId,
+    String? propertyId,
+    String? content,
+    DateTime? timestamp,
+    String? status,
+  }) {
+    return Message(
+      id: id ?? this.id,
+      senderId: senderId ?? this.senderId,
+      receiverId: receiverId ?? this.receiverId,
+      propertyId: propertyId ?? this.propertyId,
+      content: content ?? this.content,
+      timestamp: timestamp ?? this.timestamp,
+      status: status ?? this.status,
+    );
+  }
+
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
       id: json['_id'] ?? '',

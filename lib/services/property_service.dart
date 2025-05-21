@@ -355,4 +355,35 @@ class PropertyService {
       throw Exception('Failed to fetch favorite properties: \\${response.body}');
     }
   }
+
+  Future<bool> deleteProperty(String propertyId) async {
+    final uri = Uri.parse('${ApiConstants.baseUrl}/properties/$propertyId');
+    final response = await http.delete(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      return true;
+    } else {
+      throw Exception('Failed to delete property: ${response.body}');
+    }
+  }
+
+  Future<bool> editProperty(String propertyId, Map<String, dynamic> propertyData) async {
+    final uri = Uri.parse('${ApiConstants.baseUrl}/properties/$propertyId');
+    final response = await http.patch(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(propertyData),
+    );
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      throw Exception('Failed to update property: ${response.body}');
+    }
+  }
 } 
