@@ -186,10 +186,10 @@ class PropertyService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getUserProperties() async {
+  Future<List<Property>> getUserProperties() async {
     try {
       final userData = await _authService.getUser();
-      
+
       if (userData == null || userData['email'] == null) {
         throw Exception('User email not found');
       }
@@ -205,14 +205,25 @@ class PropertyService {
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
-        return List<Map<String, dynamic>>.from(responseData.map((item) => 
-          Map<String, dynamic>.from(item)
-        ));
+        // print('Raw response data for user properties: $responseData'); // Log raw data
+        // Directly map the raw data to Property objects using fromJson
+        return responseData.map((json) {
+          try {
+            final property = Property.fromJson(json);
+            // print('Successfully parsed property: ${property.id}'); // Log successful parsing
+            return property;
+          } catch (e) {
+            // print('Error parsing property JSON: $e for data: $json'); // Log parsing errors
+            rethrow; // Re-throw the parsing error to be caught by the screen
+          }
+        }).toList();
       } else {
-        throw Exception('Failed to fetch user properties: ${response.body}');
+        throw Exception('Failed to fetch user properties with status code: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error fetching user properties: $e');
+      // Re-throw the caught exception after logging
+      print('Error fetching user properties: $e');
+      rethrow;
     }
   }
 
@@ -292,30 +303,13 @@ class PropertyService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) {
-          return Property(
-            id: json['_id'] ?? json['id'] ?? '',
-            title: json['title'] ?? '',
-            description: json['description'] ?? '',
-            price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
-            location: json['location'] ?? '',
-            images: List<String>.from(json['images'] ?? []),
-            propertyType: json['propertyType'] ?? json['type'] ?? '',
-            status: json['status'] ?? 'available',
-            bedrooms: int.tryParse(json['roomDetails']?['bedrooms']?.toString() ?? '0') ?? 0,
-            bathrooms: int.tryParse(json['roomDetails']?['bathrooms']?.toString() ?? '0') ?? 0,
-            area: double.tryParse(json['size']?.toString() ?? '0') ?? 0.0,
-            features: List<String>.from(json['features']?.keys ?? []),
-            userId: json['user']?['_id'],
-            userEmail: json['userEmail'],
-            createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-            updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
-            isSale: json['purpose'] == 'Sale',
-          );
-        }).toList();
+        final decoded = json.decode(response.body);
+        final List<dynamic> data = decoded is List
+            ? decoded
+            : (decoded['properties'] ?? []);
+        return data.map((json) => Property.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to load properties: ${response.statusCode}');
+        throw Exception('Failed to load properties: \\${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching properties: $e');

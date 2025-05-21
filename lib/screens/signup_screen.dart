@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:landeed/components/app_button.dart';
 import 'package:landeed/components/gap.dart';
-import 'package:landeed/components/social_login_buttons.dart';
 import 'package:landeed/constant/colors.dart';
 import 'package:landeed/utils/route_name.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +20,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _phoneController = TextEditingController();
   final _fullNameController = TextEditingController();
   bool _isLoading = false;
+  bool _showPassword = false;
 
   @override
   void dispose() {
@@ -46,7 +46,15 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, RoutesName.loginScreen);
+        // Navigate to OTP verification screen with email
+        Navigator.pushReplacementNamed(
+          context,
+          RoutesName.otpScreen,
+          arguments: {
+            'email': _emailController.text.trim(),
+            'isPasswordReset': false,
+          },
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -146,11 +154,21 @@ class _SignupScreenState extends State<SignupScreen> {
                   Gap(isWidth: false, isHeight: true, height: height * 0.02),
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: !_showPassword,
                     decoration: InputDecoration(
                       hintText: "Password",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _showPassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _showPassword = !_showPassword;
+                          });
+                        },
                       ),
                     ),
                     validator: (value) {
@@ -197,7 +215,6 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ],
                   ),
-                  const SocialLoginButtons()
                 ],
               ),
             ),

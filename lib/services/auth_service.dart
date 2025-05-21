@@ -295,26 +295,28 @@ class AuthService extends ChangeNotifier {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/auth/signup'),
+        Uri.parse('${ApiConstants.baseUrl}/auth/send-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
           'password': password,
           'phoneNumber': phoneNumber,
           'fullName': fullName,
+          'userData': {
+            'email': email,
+            'password': password,
+            'phoneNumber': phoneNumber,
+            'fullName': fullName,
+          }
         }),
       );
 
-      if (response.statusCode == 201) {
-        // User created successfully, no need to store token or user data
-        // as we're redirecting to login
-        return;
-      } else {
+      if (response.statusCode != 200) {
         final error = jsonDecode(response.body);
-        throw Exception(error['message'] ?? 'Signup failed');
+        throw Exception(error['message'] ?? 'Failed to send OTP');
       }
     } catch (e) {
-      throw Exception('Failed to signup: $e');
+      throw Exception('Failed to send OTP: $e');
     }
   }
 
@@ -323,6 +325,169 @@ class AuthService extends ChangeNotifier {
       return await _storage.read(key: 'user_token');
     } catch (e) {
       return null;
+    }
+  }
+
+  Future<void> updateUserProfile({
+    required String name,
+    String? profileImageBase64,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token == null) throw Exception('Not authenticated');
+
+      final userData = await getUser();
+      if (userData == null || userData['email'] == null) {
+        throw Exception('User email not found');
+      }
+
+      final body = {
+        'email': userData['email'],
+        'name': name,
+        if (profileImageBase64 != null) 'profileImage': profileImageBase64,
+      };
+
+      final response = await http.put(
+        Uri.parse('${ApiConstants.baseUrl}/auth/update-profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final updatedUser = jsonDecode(response.body)['user'];
+        await _storage.write(key: 'userData', value: jsonEncode(updatedUser));
+        _userData = updatedUser;
+        notifyListeners();
+      } else {
+        throw Exception('Failed to update profile: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Failed to update profile: $e');
+    }
+  }
+
+  Future<void> verifyEmailOTP({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/auth/verify-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'otp': otp,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['token'] != null) {
+          // Store user data and token
+          await _storage.write(key: 'token', value: data['token']);
+          await _storage.write(key: 'userData', value: jsonEncode(data['user']));
+          _isAuthenticated = true;
+          _isAdmin = false;
+          _userData = data['user'];
+          notifyListeners();
+        }
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Email verification failed');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<void> resendEmailOTP(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/auth/resend-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Failed to resend OTP');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<void> verifyPasswordResetOTP({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/auth/verify-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'otp': otp,
+          'isPasswordReset': true,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data;
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Password reset verification failed');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<void> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/auth/request-password-reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Failed to send password reset OTP');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Failed to reset password');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
     }
   }
 } 

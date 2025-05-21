@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:landeed/services/auth_service.dart';
@@ -8,9 +9,35 @@ import 'package:landeed/screens/my_properties_screen.dart';
 import 'package:landeed/screens/favorite_properties_screen.dart';
 import 'package:landeed/screens/about_us_screen.dart';
 import 'package:landeed/screens/terms_conditions_screen.dart';
+import 'package:landeed/screens/user_profile_screen.dart';
+import 'package:landeed/screens/chat_list_screen.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
+
+  Widget _buildProfileImage(Map<String, dynamic>? userData) {
+    if (userData != null && userData['profileImage'] != null && userData['profileImage'].isNotEmpty) {
+      try {
+        final imageBytes = base64Decode(userData['profileImage']);
+        return CircleAvatar(
+          radius: 50,
+          backgroundColor: Colors.grey[200],
+          backgroundImage: MemoryImage(imageBytes),
+        );
+      } catch (e) {
+        return const CircleAvatar(
+          radius: 50,
+          backgroundColor: Colors.grey,
+          child: Icon(Icons.person, size: 50, color: Colors.white),
+        );
+      }
+    }
+    return const CircleAvatar(
+      radius: 50,
+      backgroundColor: Colors.grey,
+      child: Icon(Icons.person, size: 50, color: Colors.white),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,11 +67,7 @@ class MenuScreen extends StatelessWidget {
             Center(
               child: Column(
                 children: [
-                  const CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.grey,
-                    child: Icon(Icons.person, size: 50, color: Colors.white),
-                  ),
+                  _buildProfileImage(userData),
                   const SizedBox(height: 16),
                   Text(
                     userData?['fullName'] ?? 'User Name',
@@ -58,6 +81,19 @@ class MenuScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Colors.grey,
                         ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Edit Profile'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UserProfileScreen(startInEditMode: true),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -78,10 +114,19 @@ class MenuScreen extends StatelessWidget {
             ),
             _buildMenuItem(
               context,
-              icon: Icons.remove_red_eye_outlined,
-              title: 'Recently Viewed',
+              icon: Icons.chat,
+              title: 'Chat History',
               onTap: () {
-                // TODO: Navigate to recently viewed screen
+                final userId = authService.userData?['id'] ?? '';
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatListScreen(
+                      userId: userId,
+                      baseUrl: 'http://192.168.1.2:3000',
+                    ),
+                  ),
+                );
               },
             ),
             _buildMenuItem(
@@ -195,6 +240,27 @@ class MenuScreen extends StatelessWidget {
                     builder: (context) => const TermsConditionsScreen(),
                   ),
                 );
+              },
+            ),
+            _buildMenuItem(
+              context,
+              icon: Icons.edit,
+              title: 'Edit Profile',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const UserProfileScreen(startInEditMode: true),
+                  ),
+                );
+              },
+            ),
+            _buildMenuItem(
+              context,
+              icon: Icons.lock_reset,
+              title: 'Change Password',
+              onTap: () {
+                Navigator.pushNamed(context, RoutesName.forgotPasswordScreen);
               },
             ),
           ],

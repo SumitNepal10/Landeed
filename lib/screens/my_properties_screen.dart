@@ -14,7 +14,7 @@ class MyPropertiesScreen extends StatefulWidget {
 
 class _MyPropertiesScreenState extends State<MyPropertiesScreen> {
   late final PropertyService _propertyService;
-  List<Map<String, dynamic>> _properties = [];
+  List<Property> _properties = [];
   bool _isLoading = true;
   String? _error;
 
@@ -35,13 +35,23 @@ class _MyPropertiesScreenState extends State<MyPropertiesScreen> {
       });
 
       final properties = await _propertyService.getUserProperties();
+
+      // Log the properties list before setting state
+      // print('Fetched and parsed properties list:');
+      // for (var prop in properties) {
+      //   print('  Property ID: ${prop.id.runtimeType} - ${prop.id}');
+      //   print('  Property User ID: ${prop.userId.runtimeType} - ${prop.userId}');
+      // }
+
       setState(() {
         _properties = properties;
         _isLoading = false;
       });
     } catch (e) {
+      // print('Error loading user properties: $e'); // Keep detailed error in console
       setState(() {
-        _error = e.toString();
+        // Simplify error display to avoid potential issues with exception details
+        _error = 'Failed to load properties. Please try again.';
         _isLoading = false;
       });
     }
@@ -118,24 +128,7 @@ class _MyPropertiesScreenState extends State<MyPropertiesScreen> {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16),
                             child: PropertyCard(
-                              property: Property(
-                                id: property['_id'] ?? '',
-                                title: property['title'] ?? '',
-                                description: property['description'] ?? '',
-                                price: double.tryParse(property['price']?.toString() ?? '0') ?? 0.0,
-                                location: property['location'] ?? '',
-                                images: List<String>.from(property['images'] ?? []),
-                                propertyType: property['type'] ?? '',
-                                status: property['status'] ?? 'pending',
-                                bedrooms: int.tryParse(property['roomDetails']?['bedrooms']?.toString() ?? '0') ?? 0,
-                                bathrooms: int.tryParse(property['roomDetails']?['bathrooms']?.toString() ?? '0') ?? 0,
-                                area: double.tryParse(property['size']?.toString() ?? '0') ?? 0.0,
-                                features: List<String>.from(property['features']?.keys ?? []),
-                                userId: property['user']?['_id'],
-                                createdAt: DateTime.parse(property['createdAt'] ?? DateTime.now().toIso8601String()),
-                                updatedAt: DateTime.parse(property['updatedAt'] ?? DateTime.now().toIso8601String()),
-                                isSale: property['purpose'] == 'Sale',
-                              ),
+                              property: property,
                             ),
                           );
                         },

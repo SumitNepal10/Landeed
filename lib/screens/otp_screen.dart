@@ -8,13 +8,13 @@ import 'package:provider/provider.dart';
 import 'package:landeed/services/auth_service.dart';
 
 class OtpScreen extends StatefulWidget {
-  final String phoneNumber;
-  final String verificationId;
+  final String email;
+  final bool isPasswordReset;
 
   const OtpScreen({
     super.key,
-    required this.phoneNumber,
-    required this.verificationId,
+    required this.email,
+    this.isPasswordReset = false,
   });
 
   @override
@@ -31,13 +31,29 @@ class _OtpScreenState extends State<OtpScreen> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.verifyOTP(
-        verificationId: widget.verificationId,
-        otp: otp,
-      );
-      
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, RoutesName.authScreen);
+      if (widget.isPasswordReset) {
+        await authService.verifyPasswordResetOTP(
+          email: widget.email,
+          otp: otp,
+        );
+        if (mounted) {
+          Navigator.pushReplacementNamed(
+            context,
+            RoutesName.resetPasswordScreen,
+            arguments: {
+              'email': widget.email,
+              'otp': otp,
+            },
+          );
+        }
+      } else {
+        await authService.verifyEmailOTP(
+          email: widget.email,
+          otp: otp,
+        );
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, RoutesName.loginScreen);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -57,7 +73,16 @@ class _OtpScreenState extends State<OtpScreen> {
   Future<void> resendOTP() async {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.resendOTP(widget.phoneNumber);
+      if (widget.isPasswordReset) {
+        await authService.forgotPassword(widget.email);
+      } else {
+        await authService.resendEmailOTP(widget.email);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('OTP resent successfully')),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,9 +110,9 @@ class _OtpScreenState extends State<OtpScreen> {
                 Gap(isWidth: false, isHeight: true, height: height * 0.01),
                 HeaderTitle(
                   title: "Enter the ",
-                  bottomTitle: "Enter the 4 digit code that we just sent to",
+                  bottomTitle: "Enter the 6 digit code that we just sent to",
                   isBottomTitle: true,
-                  bottomTitle2: widget.phoneNumber,
+                  bottomTitle2: widget.email,
                   subtitle: "code",
                 ),
                 Gap(isWidth: false, isHeight: true, height: height * 0.09),

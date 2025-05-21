@@ -8,6 +8,10 @@ import 'package:landeed/screens/otp_screen.dart';
 import 'package:landeed/screens/dashboard_screen.dart';
 import 'package:landeed/screens/admin/admin_dashboard_screen.dart';
 import 'package:landeed/screens/notifications_screen.dart';
+import 'package:landeed/screens/property_comparison_screen.dart';
+import 'package:landeed/screens/property_analytics_screen.dart';
+import 'package:landeed/screens/forgot_password_screen.dart';
+import 'package:landeed/screens/reset_password_screen.dart';
 import 'package:landeed/services/auth_service.dart';
 import 'package:landeed/services/property_service.dart';
 import 'services/favorites_service.dart';
@@ -53,13 +57,24 @@ class MyApp extends StatelessWidget {
         RoutesName.otpScreen: (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
           return OtpScreen(
-            phoneNumber: args['phoneNumber'],
-            verificationId: args['verificationId'],
+            email: args['email'],
+            isPasswordReset: args['isPasswordReset'] ?? false,
+          );
+        },
+        RoutesName.forgotPasswordScreen: (context) => const ForgotPasswordScreen(),
+        RoutesName.resetPasswordScreen: (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return ResetPasswordScreen(
+            email: args['email'],
+            otp: args['otp'],
           );
         },
         RoutesName.authScreen: (context) => const DashboardScreen(),
         RoutesName.adminDashboard: (context) => const AdminDashboardScreen(),
         RoutesName.notificationsScreen: (context) => const NotificationsScreen(),
+        RoutesName.propertyComparison: (context) => const PropertyComparisonScreen(),
+        RoutesName.propertyAnalytics: (context) => const PropertyAnalyticsScreen(),
+        '/propertyComparison': (context) => const PropertyComparisonScreen(),
       },
     );
   }

@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _showPassword = false;
 
   @override
   void dispose() {
@@ -135,11 +136,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   Gap(isWidth: false, isHeight: true, height: height * 0.02),
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: !_showPassword,
                     decoration: InputDecoration(
                       hintText: "Password",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _showPassword ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _showPassword = !_showPassword;
+                          });
+                        },
                       ),
                     ),
                     validator: (value) {
@@ -155,11 +166,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   Gap(isWidth: false, isHeight: true, height: height * 0.02),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: Text(
-                      "Forgot Password?",
-                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.bold),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, RoutesName.forgotPasswordScreen);
+                      },
+                      child: Text(
+                        "Forgot Password?",
+                        style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                   Gap(isWidth: false, isHeight: true, height: height * 0.035),

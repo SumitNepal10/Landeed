@@ -4,6 +4,8 @@ import 'package:landeed/constant/colors.dart';
 import 'package:landeed/services/property_service.dart';
 import 'package:landeed/services/auth_service.dart';
 import 'package:provider/provider.dart';
+import 'package:landeed/screens/chat_screen.dart';
+import 'package:landeed/constant/api_constants.dart';
 
 class PropertyDescriptionScreen extends StatefulWidget {
   final Property? property;
@@ -156,15 +158,33 @@ class _PropertyDescriptionScreenState extends State<PropertyDescriptionScreen> {
                             onPressed: () => Navigator.pop(context),
                           ),
                         ),
-                        CircleAvatar(
-                          backgroundColor: Colors.white,
-                          child: IconButton(
-                            icon: Icon(
-                              _isFavorite ? Icons.favorite : Icons.favorite_border,
-                              color: _isFavorite ? Colors.red : Colors.black,
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: IconButton(
+                                icon: const Icon(Icons.compare_arrows, color: Colors.black),
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/propertyComparison', // Update this route if you use a named route constant
+                                    arguments: {'property': property},
+                                  );
+                                },
+                              ),
                             ),
-                            onPressed: _toggleFavorite,
-                          ),
+                            const SizedBox(width: 8),
+                            CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: IconButton(
+                                icon: Icon(
+                                  _isFavorite ? Icons.favorite : Icons.favorite_border,
+                                  color: _isFavorite ? Colors.red : Colors.black,
+                                ),
+                                onPressed: _toggleFavorite,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -223,25 +243,50 @@ class _PropertyDescriptionScreenState extends State<PropertyDescriptionScreen> {
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Owner\n${property.userEmail}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                          if (property.userEmail == _userEmail)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[100],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.person, color: Colors.blue, size: 16),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'This is your own property',
+                                    style: TextStyle(color: Colors.blue[900], fontSize: 12),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              // TODO: Implement map view
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green[900],
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('Map View'),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Owner\n${property.userEmail}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  // TODO: Implement map view
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green[900],
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text('Map View'),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -291,16 +336,24 @@ class _PropertyDescriptionScreenState extends State<PropertyDescriptionScreen> {
                     },
                   ),
                   IconButton(
-                    icon: const Icon(Icons.message, color: Colors.grey, size: 28),
-                    onPressed: () {
-                      // TODO: Implement message functionality
-                    },
-                  ),
-                  IconButton(
                     icon: const Icon(Icons.chat, color: Colors.green, size: 28),
-                    onPressed: () {
-                      // TODO: Implement WhatsApp functionality
-                    },
+                    onPressed: property.userEmail == _userEmail
+                        ? null // Disable chat for own properties
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatScreen(
+                                  property: property,
+                                  receiverId: property.userEmail!,
+                                  receiverEmail: property.userEmail!,
+                                  receiverName: property.userEmail!,
+                                  userId: _userEmail!,
+                                  baseUrl: ApiConstants.baseUrl,
+                                ),
+                              ),
+                            );
+                          },
                   ),
                   IconButton(
                     icon: const Icon(Icons.share, color: Colors.grey, size: 28),

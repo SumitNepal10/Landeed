@@ -7,14 +7,17 @@ import '../services/auth_service.dart';
 import '../constant/api_constants.dart';
 import 'package:provider/provider.dart';
 import '../providers/notification_provider.dart';
+import '../services/property_service.dart';
 
 class PropertyProvider with ChangeNotifier {
   final List<Property> _myProperties = [];
+  final List<Property> _allProperties = [];
   bool _isLoading = false;
   String _error = '';
   final AuthService _authService = AuthService();
 
   List<Property> get myProperties => _myProperties;
+  List<Property> get properties => _allProperties;
   bool get isLoading => _isLoading;
   String get error => _error;
 
@@ -196,6 +199,24 @@ class PropertyProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> getAllProperties() async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final propertyService = PropertyService(_authService);
+      final properties = await propertyService.getAllProperties();
+      _allProperties.clear();
+      _allProperties.addAll(properties);
+    } catch (e) {
+      print('Error getting all properties: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }

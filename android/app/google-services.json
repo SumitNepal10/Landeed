@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "205053743741",
+    "project_id": "landeed-69890",
+    "storage_bucket": "landeed-69890.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205053743741:android:695d7199f60144d4121714",
+        "android_client_info": {
+          "package_name": "com.landeed.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyAJZ9PjA5zg7P5oM2ibYsE1ISc-MLXOc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

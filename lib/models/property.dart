@@ -17,6 +17,7 @@ class Property {
   final DateTime updatedAt;
   final bool isSale;
   final bool isFavorite;
+  final int yearBuilt;
 
   const Property({
     required this.id,
@@ -37,6 +38,7 @@ class Property {
     required this.updatedAt,
     required this.isSale,
     this.isFavorite = false,
+    required this.yearBuilt,
   });
 
   // For backward compatibility
@@ -44,34 +46,88 @@ class Property {
   String get type => propertyType;
 
   factory Property.fromJson(Map<String, dynamic> json) {
+    String parseId(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is int) return value.toString();
+      // Log unexpected types for _id
+      // print('Unexpected type for ID field: ${value.runtimeType} with value $value');
+      return '';
+    }
+
+    int parseInt(dynamic value) {
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      // Log unexpected types for int fields
+      // print('Unexpected type for integer field: ${value.runtimeType} with value $value');
+      return 0;
+    }
+
+    double parseDouble(dynamic value) {
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+       // Log unexpected types for double fields
+      // print('Unexpected type for double field: ${value.runtimeType} with value $value');
+      return 0.0;
+    }
+
+    // Log the raw values being parsed for id and userId
+    // print('Parsing property JSON:');
+    // print('  _id raw value: ${json['_id']?.runtimeType} - ${json['_id']}');
+    // print('  id raw value: ${json['id']?.runtimeType} - ${json['id']}');
+    // if (json.containsKey('user') && json['user'] != null) {
+    //    print('  user type: ${json['user'].runtimeType}');
+    //    if (json['user'] is Map) {
+    //        print('  user._id raw value: ${json['user']?['_id']?.runtimeType} - ${json['user']?['_id']}');
+    //    } else {
+    //         print('  User field is not a map, value: ${json['user']}');
+    //    }
+    // }
+
     return Property(
-      id: json['_id'] ?? json['id'] ?? '',
+      id: parseId(json['_id'] ?? json['id']),
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
+      price: parseDouble(json['price']),
       location: json['location'] ?? '',
       images: List<String>.from(json['images'] ?? []),
       propertyType: json['propertyType'] ?? json['type'] ?? '',
       status: json['status'] ?? 'available',
-      bedrooms: json['bedrooms'] ?? 0,
-      bathrooms: json['bathrooms'] ?? 0,
-      area: double.tryParse(json['area']?.toString() ?? '0') ?? 0.0,
+      bedrooms: json['bedrooms'] != null
+          ? parseInt(json['bedrooms'])
+          : json['roomDetails']?['bedrooms'] != null
+              ? parseInt(json['roomDetails']?['bedrooms'])
+              : 0,
+      bathrooms: json['bathrooms'] != null
+          ? parseInt(json['bathrooms'])
+          : json['roomDetails']?['bathrooms'] != null
+              ? parseInt(json['roomDetails']?['bathrooms'])
+              : 0,
+      area: json['area'] != null
+          ? parseDouble(json['area'])
+          : json['size'] != null
+              ? parseDouble(json['size'])
+              : 0.0,
       features: json['features'] is Map
           ? (json['features'] as Map).entries
               .where((e) => e.value == true)
               .map((e) => e.key.toString())
               .toList()
           : [],
-      userId: json['userId'] ?? json['user']?['_id'],
-      userEmail: json['userEmail'] ?? json['user']?['email'],
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+      userId: parseId(json['userId'] ?? (json.containsKey('user') && json['user'] is Map ? json['user']['_id'] : null)),
+      userEmail: json['userEmail'] ?? (json.containsKey('user') && json['user'] is Map ? json['user']['email'] : null),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt']) 
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
-      isSale: json['isSale'] ?? true,
+      isSale: json['purpose'] == 'Sale' || (json['isSale'] ?? true),
       isFavorite: json['isFavorite'] ?? false,
+      yearBuilt: json['yearBuilt'] != null
+          ? parseInt(json['yearBuilt'])
+          : DateTime.now().year,
     );
   }
 
@@ -95,6 +151,7 @@ class Property {
       'updatedAt': updatedAt.toIso8601String(),
       'isSale': isSale,
       'isFavorite': isFavorite,
+      'yearBuilt': yearBuilt,
     };
   }
 
@@ -117,6 +174,7 @@ class Property {
     DateTime? updatedAt,
     bool? isSale,
     bool? isFavorite,
+    int? yearBuilt,
   }) {
     return Property(
       id: id ?? this.id,
@@ -137,6 +195,7 @@ class Property {
       updatedAt: updatedAt ?? this.updatedAt,
       isSale: isSale ?? this.isSale,
       isFavorite: isFavorite ?? this.isFavorite,
+      yearBuilt: yearBuilt ?? this.yearBuilt,
     );
   }
 

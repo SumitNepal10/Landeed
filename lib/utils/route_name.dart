@@ -1,21 +1,22 @@
 class RoutesName {
   static const String splashScreen = 'splashScreen';
-  static const String onboardingScreen = 'onboardingScreen';
-  static const String loginScreen = 'loginScreen';
+  static const String onboardingScreen = '/onboarding';
+  static const String loginScreen = '/login';
   static const String startedScreen = 'startedScreen';
-  static const String signupScreen = 'signupScreen';
-  static const String forgotPasswordScreen = 'forgotPasswordScreen';
+  static const String signupScreen = '/signup';
+  static const String forgotPasswordScreen = '/forgot-password';
+  static const String resetPasswordScreen = '/reset-password';
   static const String faqScreen = 'faqScreen';
-  static const String otpScreen = 'otpScreen';
+  static const String otpScreen = '/otp';
   static const String accountEmptyScreen = 'accountEmptyScreen';
   static const String accountLocationScreen = 'accountLocationScreen';
   static const String galleryGridView = 'galleryGridView';
-  static const String homeScreen = 'homeScreen';
+  static const String homeScreen = '/home';
   static const String userAccountScreen = 'userAccountScreen';
   static const String searchScreen = 'searchScreen';
   static const String favoriteScreen = 'favoriteScreen';
   static const String profileScreen = 'profileScreen';
-  static const String authScreen = 'authScreen';
+  static const String authScreen = '/auth';
   static const String promotionScreen = 'promotionScreen';
   static const String featuredScreen = 'featuredScreen';
   static const String featuredDetailsScreen = 'featuredDetailsScreen';
@@ -23,7 +24,9 @@ class RoutesName {
   static const String topLocationDetailsScreen = 'topLocationDetailsScreen';
   static const String topAgentScreen = 'topAgentScreen';
   static const String agentProfileScreen = 'agentProfileScreen';
-  static const String adminDashboard = 'adminDashboard';
+  static const String adminDashboard = '/admin-dashboard';
   static const String myPropertiesScreen = 'myPropertiesScreen';
-  static const String notificationsScreen = 'notificationsScreen';
+  static const String notificationsScreen = '/notifications';
+  static const String propertyComparison = '/property-comparison';
+  static const String propertyAnalytics = '/property-analytics';
 }
