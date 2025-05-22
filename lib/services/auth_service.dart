@@ -100,29 +100,32 @@ class AuthService extends ChangeNotifier {
         }),
       );
 
+      final data = jsonDecode(response.body);
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        
         if (isAdmin) {
           await _storage.write(key: 'admin_token', value: data['token']);
-          await _storage.write(key: 'adminData', value: jsonEncode(data['admin']));
+          await _storage.write(key: 'admin', value: jsonEncode(data['admin']));
+          _isAuthenticated = true;
+          _isAdmin = true;
+          _userData = data['admin'];
         } else {
           await _storage.write(key: 'token', value: data['token']);
           await _storage.write(key: 'userData', value: jsonEncode(data['user']));
+          _isAuthenticated = true;
+          _isAdmin = false;
+          _userData = data['user'];
         }
-
-        _isAuthenticated = true;
-        _isAdmin = isAdmin;
-        _userData = isAdmin ? data['admin'] : data['user'];
+        
         _authState.value = true;
         notifyListeners();
 
         return {'success': true, 'data': data};
       } else {
-        final error = jsonDecode(response.body);
-        return {'success': false, 'message': error['message'] ?? 'Login failed'};
+        return {'success': false, 'message': data['message'] ?? 'Login failed'};
       }
     } catch (e) {
+      print('Login error: $e');
       return {'success': false, 'message': e.toString()};
     }
   }

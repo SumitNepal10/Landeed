@@ -8,15 +8,19 @@ const jwt = require('jsonwebtoken');
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('Admin login attempt:', { email });
 
     // Find admin by email
     const admin = await Admin.findOne({ email });
     if (!admin) {
+      console.log('Admin not found:', email);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+    console.log('Admin found:', { id: admin._id, email: admin.email });
 
     // Check password
     const isMatch = await admin.comparePassword(password);
+    console.log('Password match:', isMatch);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }

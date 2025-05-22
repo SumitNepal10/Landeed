@@ -55,7 +55,6 @@ router.get('/my-properties', async (req, res) => {
 
     const properties = await Property.find({ userEmail: email })
       .sort({ createdAt: -1 });
-    console.log('Found properties:', properties); // Debug log
     
     res.json(properties);
   } catch (error) {

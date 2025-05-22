@@ -32,7 +32,8 @@ const mongoURI = process.env.MONGODB_URI;
 
 // CORS configuration
 app.use(cors({
-  origin: '*',
+  origin: true, // Allow all origins
+  credentials: true, // Allow credentials
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -57,15 +58,7 @@ mongoose.connect(mongoURI, {
   console.log('MongoDB Connected Successfully');
   
   // Create default admin if not exists
-  const defaultAdmin = await Admin.findOne({ email: 'admin@landeed.com' });
-  if (!defaultAdmin) {
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-    await Admin.create({
-      email: 'admin@landeed.com',
-      password: hashedPassword,
-      fullName: 'Default Admin'
-    });
-  }
+  await Admin.createDefaultAdmin();
 })
 .catch(err => {
   console.error('MongoDB Connection Error:', err.message);
